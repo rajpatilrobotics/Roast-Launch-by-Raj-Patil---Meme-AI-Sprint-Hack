@@ -144,6 +144,21 @@ router.get("/live-battle/room/:id", async (req, res) => {
   }
 });
 
+router.get("/live-battle/history", async (req, res) => {
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  try {
+    const rows = await db
+      .select()
+      .from(liveBattleRoomsTable)
+      .where(eq(liveBattleRoomsTable.status, "done"))
+      .orderBy(desc(liveBattleRoomsTable.createdAt))
+      .limit(limit);
+    res.json({ battles: rows });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || "history fetch failed" });
+  }
+});
+
 router.post("/live-battle/submit", async (req, res) => {
   const roomId = Number(req.body?.roomId);
   const userName = String(req.body?.userName || "").trim();
