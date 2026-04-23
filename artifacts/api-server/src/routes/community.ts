@@ -121,6 +121,38 @@ router.get("/community/leaderboard", async (_req, res) => {
   res.json({ leaderboard: rows });
 });
 
+router.get("/community/launches", async (_req, res) => {
+  const rows = await db
+    .select({
+      userName: activityHistoryTable.userName,
+      launchCount: sql<number>`count(*)::int`,
+      avgScore: sql<number>`round(avg(score))::int`,
+      lastLaunchAt: sql<string>`max("created_at")`,
+    })
+    .from(activityHistoryTable)
+    .where(eq(activityHistoryTable.type, "launch"))
+    .groupBy(activityHistoryTable.userName)
+    .orderBy(desc(sql`count(*)`))
+    .limit(20);
+
+  const recent = await db
+    .select({
+      id: activityHistoryTable.id,
+      userName: activityHistoryTable.userName,
+      coinName: activityHistoryTable.coinName,
+      score: activityHistoryTable.score,
+      verdict: activityHistoryTable.verdict,
+      result: activityHistoryTable.result,
+      createdAt: activityHistoryTable.createdAt,
+    })
+    .from(activityHistoryTable)
+    .where(eq(activityHistoryTable.type, "launch"))
+    .orderBy(desc(activityHistoryTable.createdAt))
+    .limit(10);
+
+  res.json({ leaderboard: rows, recent });
+});
+
 router.post("/community/challenges", async (req, res) => {
   const { fromUser, toUser, coinName, score } = req.body || {};
   if (!fromUser || !toUser) return res.status(400).json({ error: "fromUser and toUser required" });

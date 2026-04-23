@@ -19,6 +19,8 @@ type DailyBattle = {
 type ActivityItem = { id: number; userName: string; type: string; coinName: string; score: number | null; verdict: string | null; createdAt: string; remixOfId?: number | null; remixOfUser?: string | null };
 type Summary = { reactions: Record<string, number>; myReactions: string[]; voteTotal: number; myVote: number; commentCount: number };
 type LeaderboardUser = { userName: string; total: number; avgScore: number; roastCount: number; battleCount: number };
+type LaunchLeader = { userName: string; launchCount: number; avgScore: number | null; lastLaunchAt: string };
+type RecentLaunch = { id: number; userName: string; coinName: string; score: number | null; verdict: string | null; result: any; createdAt: string };
 type Recap = { empty: boolean; totalActivity: number; topUser: { userName: string; count: number } | null; bestCoin: { userName: string; coinName: string; score: number; verdict: string } | null; mostLoved: any | null };
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -30,6 +32,9 @@ export default function History() {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [summary, setSummary] = useState<Record<number, Summary>>({});
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
+  const [launchTab, setLaunchTab] = useState<"roasters" | "launches">("roasters");
+  const [launchLeaders, setLaunchLeaders] = useState<LaunchLeader[]>([]);
+  const [recentLaunches, setRecentLaunches] = useState<RecentLaunch[]>([]);
   const [recap, setRecap] = useState<Recap | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "mine">("all");
@@ -81,6 +86,14 @@ export default function History() {
     }).catch(() => {});
     setBattleVoting(false);
   }
+
+  useEffect(() => {
+    fetch(`${API}/community/launches`).then((r) => r.json())
+      .then((d) => {
+        setLaunchLeaders(d.leaderboard || []);
+        setRecentLaunches(d.recent || []);
+      }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -244,21 +257,101 @@ export default function History() {
         </div>
       )}
 
-      {/* Leaderboard strip */}
-      {leaderboard.length > 0 && (
+      {/* Leaderboard with tabs */}
+      {(leaderboard.length > 0 || launchLeaders.length > 0) && (
         <div className="mb-8">
-          <h2 className="text-xs font-mono uppercase text-zinc-500 mb-3 tracking-wider">🏆 Top Roasters</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {leaderboard.slice(0, 3).map((u, i) => (
-              <div key={u.userName} className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${i === 0 ? "border-yellow-500/50 bg-yellow-500/5" : i === 1 ? "border-zinc-400/40 bg-zinc-400/5" : "border-orange-700/40 bg-orange-900/5"}`}>
-                <span className="text-2xl">{MEDALS[i]}</span>
-                <div className="min-w-0">
-                  <div className="font-mono text-sm font-bold text-zinc-100 truncate">{u.userName}</div>
-                  <div className="text-[11px] text-zinc-500 font-mono">{u.total} ops · avg {u.avgScore ?? "—"}/100</div>
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <h2 className="text-xs font-mono uppercase text-zinc-500 tracking-wider">
+              {launchTab === "roasters" ? "🏆 Top Roasters" : "🚀 Top Launchers"}
+            </h2>
+            <div className="flex gap-1" data-testid="leaderboard-tabs">
+              {([
+                ["roasters", "Roasters"],
+                ["launches", "Launches"],
+              ] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  onClick={() => setLaunchTab(k)}
+                  className={`px-3 py-1 rounded-lg font-mono text-[10px] uppercase tracking-wider border transition-colors ${
+                    launchTab === k
+                      ? k === "roasters"
+                        ? "bg-orange-500/20 border-orange-500/50 text-orange-400"
+                        : "bg-green-500/20 border-green-500/50 text-green-400"
+                      : "border-zinc-800 text-zinc-500 hover:text-zinc-300"
+                  }`}
+                  data-testid={`leaderboard-tab-${k}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {launchTab === "roasters" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {leaderboard.slice(0, 3).map((u, i) => (
+                <div key={u.userName} className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${i === 0 ? "border-yellow-500/50 bg-yellow-500/5" : i === 1 ? "border-zinc-400/40 bg-zinc-400/5" : "border-orange-700/40 bg-orange-900/5"}`}>
+                  <span className="text-2xl">{MEDALS[i]}</span>
+                  <div className="min-w-0">
+                    <div className="font-mono text-sm font-bold text-zinc-100 truncate">{u.userName}</div>
+                    <div className="text-[11px] text-zinc-500 font-mono">{u.total} ops · avg {u.avgScore ?? "—"}/100</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : launchLeaders.length === 0 ? (
+            <div className="rounded-xl border border-zinc-800 bg-black/40 p-5 text-center">
+              <div className="text-3xl mb-1">🚀</div>
+              <div className="text-zinc-400 text-sm font-mono">No launches yet — be the first to ship on Four.meme.</div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {launchLeaders.slice(0, 3).map((u, i) => (
+                  <div key={u.userName} className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${i === 0 ? "border-green-500/50 bg-green-500/5" : i === 1 ? "border-zinc-400/40 bg-zinc-400/5" : "border-orange-700/40 bg-orange-900/5"}`}>
+                    <span className="text-2xl">{MEDALS[i]}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-sm font-bold text-zinc-100 truncate">{u.userName}</div>
+                      <div className="text-[11px] text-zinc-500 font-mono">
+                        {u.launchCount} {u.launchCount === 1 ? "launch" : "launches"} · avg {u.avgScore ?? "—"}/100
+                      </div>
+                    </div>
+                    <div className="text-2xl">🚀</div>
+                  </div>
+                ))}
+              </div>
+
+              {recentLaunches.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-[10px] font-mono uppercase text-zinc-500 tracking-wider mb-2">Recent launches</div>
+                  <div className="space-y-2">
+                    {recentLaunches.map((l) => {
+                      const ticker = l.result?.ticker || "";
+                      return (
+                        <div key={l.id} className="rounded-lg border border-zinc-800 bg-black/40 p-3 flex items-center gap-3">
+                          <span className="text-lg shrink-0">🚀</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-zinc-200 truncate">
+                              <span className="text-green-400 font-mono">@{l.userName}</span>
+                              <span className="text-zinc-500"> launched </span>
+                              <span className="font-bold">{l.coinName}</span>
+                              {ticker && <span className="text-orange-400 font-mono"> ${ticker}</span>}
+                            </div>
+                            <div className="text-[10px] font-mono text-zinc-500">
+                              on Four.meme · {new Date(l.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                          {typeof l.score === "number" && (
+                            <div className={`text-lg font-black font-mono ${scoreColor(l.score)}`}>{l.score}</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
