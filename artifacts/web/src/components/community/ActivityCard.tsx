@@ -195,7 +195,7 @@ export default function ActivityCard({
     <div className="bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden">
       {/* Header row */}
       <div className="flex items-center gap-3 px-4 py-3">
-        <span className="text-lg">{item.type === "battle" ? "⚔️" : "🔥"}</span>
+        <span className="text-lg">{item.type === "battle" ? "⚔️" : item.type === "launch" ? "🚀" : "🔥"}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Link href={`/u/${item.userName}`} className={`font-mono text-sm font-bold hover:underline underline-offset-2 ${isOwn ? "text-green-400" : "text-orange-400"}`}>

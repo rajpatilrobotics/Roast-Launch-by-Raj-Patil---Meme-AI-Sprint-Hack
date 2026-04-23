@@ -26,7 +26,11 @@ export type RoastResult = {
   memeTexts: string[];
   fitsMeta: boolean;
   hotMeta: string;
+  graduationProbability: number;
+  graduationReason: string;
   txHash?: string;
+  launched?: boolean;
+  launchedAt?: number;
   timestamp: number;
 };
 
@@ -172,9 +176,11 @@ SCORING:
 - sevenDayPlan: each day a specific action mentioning WHERE/WITH WHOM (e.g. "Day 3: Pay Murad and 5 anime KOLs $200 each for synced tweets")
 - memeTexts: 3 captions max 12 words, each referencing the specific pitch
 - fitsMeta: boolean
+- graduationProbability (0-100): chance this token reaches Four.meme's graduation threshold (~$80K market cap → migrates to PancakeSwap). Consider narrative virality, community appeal, ticker memorability, meta fit, and rug risk.
+- graduationReason: 1 punchy sentence (max 18 words) explaining the graduation odds in plain degen language.
 
 Return ONLY this JSON:
-{"bull":"...","skeptic":"...","rug":"...","score":number,"rugProbability":number,"narrative":number,"community":number,"timing":number,"risk":number,"verdict":"NGMI"|"DYOR"|"WAGMI","summary":"...","fixedBrief":["...","...","...","..."],"sevenDayPlan":{"day1":"...","day2":"...","day3":"...","day4":"...","day5":"...","day6":"...","day7":"..."},"memeTexts":["...","...","..."],"fitsMeta":boolean}`;
+{"bull":"...","skeptic":"...","rug":"...","score":number,"rugProbability":number,"narrative":number,"community":number,"timing":number,"risk":number,"verdict":"NGMI"|"DYOR"|"WAGMI","summary":"...","fixedBrief":["...","...","...","..."],"sevenDayPlan":{"day1":"...","day2":"...","day3":"...","day4":"...","day5":"...","day6":"...","day7":"..."},"memeTexts":["...","...","..."],"fitsMeta":boolean,"graduationProbability":number,"graduationReason":"..."}`;
 
   let bull = "";
   let skeptic = "";
@@ -223,6 +229,8 @@ Return ONLY this JSON:
       },
       memeTexts: ["When the chart only goes up", "Bears in shambles", "Diamond hands assemble"],
       fitsMeta: false,
+      graduationProbability: 35,
+      graduationReason: "Mid-tier vibes — needs a sharper hook to graduate.",
     };
   }
 
@@ -249,6 +257,8 @@ Return ONLY this JSON:
     memeTexts: Array.isArray(scoreObj.memeTexts) ? scoreObj.memeTexts.slice(0, 3) : [],
     fitsMeta: !!scoreObj.fitsMeta,
     hotMeta: meta,
+    graduationProbability: Math.max(0, Math.min(100, Number(scoreObj.graduationProbability) || 0)),
+    graduationReason: String(scoreObj.graduationReason || ""),
     timestamp: Date.now(),
   };
 
@@ -276,11 +286,16 @@ Return ONLY this JSON:
 
 router.get("/trending", async (_req, res) => {
   try {
-    const { tokens } = await fetchTrending();
+    const { tokens, raw } = await fetchTrending();
     const meta = await classifyMeta(tokens);
-    res.json({ tokens: tokens.slice(0, 10), meta });
+    const coins = raw.slice(0, 10).map((t: any) => ({
+      name: String(t.name || t.tokenName || t.symbol || "Unknown"),
+      symbol: String(t.symbol || t.ticker || "").toUpperCase(),
+      description: String(t.description || t.shortDescription || "").slice(0, 160),
+    }));
+    res.json({ tokens: tokens.slice(0, 10), meta, coins });
   } catch (e: any) {
-    res.json({ tokens: [], meta: "Degen humor", error: e.message });
+    res.json({ tokens: [], meta: "Degen humor", coins: [], error: e.message });
   }
 });
 
@@ -322,6 +337,39 @@ router.post("/roast/remix", async (req, res) => {
   } catch (e: any) {
     res.status(500).json({ error: e?.message || "remix failed" });
   }
+});
+
+router.post("/launch", async (req, res) => {
+  const { id, userName, tokenName, ticker, tokenIdea, score, verdict } = req.body || {};
+  if (!ticker || typeof ticker !== "string") {
+    return res.status(400).json({ error: "ticker required" });
+  }
+  const item = id ? history.find((h) => h.id === id) : null;
+  if (item) {
+    item.launched = true;
+    item.launchedAt = Date.now();
+  }
+  if (userName) {
+    try {
+      await db.insert(activityHistoryTable).values({
+        userName,
+        type: "launch",
+        coinName: tokenName || tokenIdea || ticker,
+        score: typeof score === "number" ? score : item?.score ?? null,
+        verdict: verdict || item?.verdict || null,
+        result: {
+          ticker: ticker.toUpperCase(),
+          tokenName: tokenName || item?.tokenName,
+          tokenIdea: tokenIdea || item?.tokenIdea,
+          launchedAt: Date.now(),
+          platform: "four.meme",
+        } as any,
+      } as any);
+    } catch (e: any) {
+      console.error("[launch] db insert failed:", e?.message);
+    }
+  }
+  res.json({ ok: true, launched: true });
 });
 
 router.post("/history/txhash", (req, res) => {

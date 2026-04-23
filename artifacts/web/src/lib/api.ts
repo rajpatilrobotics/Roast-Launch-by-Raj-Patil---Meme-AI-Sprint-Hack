@@ -24,8 +24,18 @@ export type Roast = {
   memeTexts: string[];
   fitsMeta: boolean;
   hotMeta: string;
+  graduationProbability: number;
+  graduationReason: string;
   txHash?: string;
+  launched?: boolean;
+  launchedAt?: number;
   timestamp: number;
+};
+
+export type TrendingCoin = {
+  name: string;
+  symbol: string;
+  description: string;
 };
 
 export function verdictColor(v: string) {

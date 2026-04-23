@@ -9,6 +9,8 @@ import Countdown from "../components/Countdown";
 import Confetti from "../components/Confetti";
 import Playbook from "../components/Playbook";
 import MemeCards from "../components/MemeCards";
+import LaunchPanel from "../components/LaunchPanel";
+import TrendingFeed from "../components/TrendingFeed";
 import Voting from "../components/Voting";
 import TxReceipt, { type FakeTx } from "../components/TxReceipt";
 import { simulateTxSubmit } from "../lib/fakeTx";
@@ -453,6 +455,25 @@ export default function Home() {
                 )}
               </div>
 
+              <div data-testid="graduation-probability">
+                <div className="flex justify-between text-xs font-mono uppercase mb-1">
+                  <span className="text-purple-300">🎓 Graduation Probability</span>
+                  <span className={`${roast.graduationProbability >= 60 ? "text-purple-300" : "text-zinc-200"}`}>{roast.graduationProbability}%</span>
+                </div>
+                <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${roast.graduationProbability >= 60 ? "bg-gradient-to-r from-purple-500 to-pink-400" : "bg-purple-500/60"}`}
+                    style={{ width: `${roast.graduationProbability}%` }}
+                  />
+                </div>
+                {roast.graduationReason && (
+                  <div className="mt-1 text-[11px] font-mono text-purple-300/80">{roast.graduationReason}</div>
+                )}
+                <div className="mt-0.5 text-[10px] font-mono text-zinc-600">
+                  Odds of hitting Four.meme's ~$80K mcap → migrate to PancakeSwap.
+                </div>
+              </div>
+
               <div className="text-xs font-mono">
                 {roast.fitsMeta ? (
                   <span className="text-green-400">✅ Fits current meta ({roast.hotMeta})</span>
@@ -473,21 +494,10 @@ export default function Home() {
                 </ul>
               </div>
 
-              {roast.score >= 50 && (
-                <a
-                  href={`https://four.meme/en/create-token`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block text-center py-4 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-black text-lg hover:scale-[1.01] transition"
-                >
-                  🚀 Launch this on Four.meme →
-                </a>
-              )}
-              {roast.score >= 50 && (
-                <div className="text-center text-[11px] font-mono text-zinc-500 -mt-3">
-                  Your idea has been stress-tested. Time to ship.
-                </div>
-              )}
+              <LaunchPanel
+                roast={roast}
+                onLaunchedConfetti={() => setShowConfetti("wagmi")}
+              />
 
               <div className="pt-4 border-t border-zinc-800">
                 {tx ? (
@@ -568,6 +578,8 @@ export default function Home() {
         {roast && <Playbook plan={roast.sevenDayPlan} />}
         {roast && <MemeCards tokenName={roast.tokenName || roast.ticker || "YOUR COIN"} memeTexts={roast.memeTexts} />}
         {roast && <Voting roastId={roast.id} />}
+
+        <TrendingFeed />
 
         {/* History feed */}
         <section className="mt-12">
