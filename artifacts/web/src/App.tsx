@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import Battle from "./pages/Battle";
 import LiveBattleRoom from "./pages/LiveBattleRoom";
 import LiveBattleManager from "./components/LiveBattleManager";
+import Notifications from "./components/Notifications";
 import Meta from "./pages/Meta";
 import Leaderboard from "./pages/Leaderboard";
 import History from "./pages/History";
@@ -23,6 +24,7 @@ function AppInner() {
       {!userName && <NameModal />}
       <Header isIframed={isIframed} />
       <LiveBattleManager />
+      <Notifications />
       <Switch>
         <Route path="/battle/live/:id"><LiveBattleRoom /></Route>
         <Route path="/battle"><Battle /></Route>
