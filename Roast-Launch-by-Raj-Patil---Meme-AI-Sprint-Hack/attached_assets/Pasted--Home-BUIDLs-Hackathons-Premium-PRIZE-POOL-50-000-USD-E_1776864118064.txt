@@ -1,0 +1,145 @@
+
+
+
+Home
+BUIDLs
+Hackathons
+
+
+
+Premium
+
+
+
+PRIZE POOL
+50,000 USD
+EVENT TIMELINE
+2 hours left for submission
+Upcoming
+Submission
+2026/04/01 11:30
+Deadline
+2026/04/22 21:29
+Virtual
+HACKATHON TAGS
+Ai
+blockchain
+Meme
+Sprint
+Fourmeme
+bnbchain
+WEB3 ECOSYSTEM
+BNB Chain
+SUBMISSION REQUIREMENTS
+GitHub/Gitlab/Bitbucket Link Required
+Demo Video Required
+
+FourMeme
+Four.Meme AI Sprint
+Details
+BUIDLs
+131
+Bounties
+3
+Hackers
+450
+Join a Team
+New
+Ask Question
+8
+Ideas
+OUTLINE
+Introduction
+Introduction
+
+Four.meme AI Sprint is a global online hackathon focused on real-world AI innovation — spanning AI tools, generative applications, AI agents, and integrations across Web3 and internet culture.
+
+This 4-week sprint is designed for builders who want to experiment rapidly and ship meaningful AI products. Projects are not required to issue tokens or deploy on-chain, making the hackathon accessible to early-stage teams, solo developers, and AI enthusiasts.
+
+Participants will gain exposure to leading AI and Web3 ecosystems, access mentorship and technical resources, and compete for a $50,000 prize pool plus incubation opportunities.
+
+Timeline
+
+Registration Period: April 1 – April 7, 2026
+Build Phase: April 8 – April 21, 2026
+Submission Deadline: April 22, 2026
+Evaluation Period: April 23 – April 28, 2026
+Results Announcement: April 30, 2026
+Prizes
+
+Total Prize Pool: $50,000 + ecosystem support
+
+🥇 1st Place: $12,000 + incubation & mentorship support
+🥈 2nd Place: $8,000 + ecosystem exposure
+🥉 3rd Place: $8,000 + ecosystem exposure
+🏅 4th Place: $6,000
+🏅 5th Place: $6,000
+Additional partner-sponsored thematic awards may be announced during the hackathon.
+
+Eligibility
+
+Open to global participants
+Team size: 1–5 members
+Projects must involve AI technology
+AI x Web3 / AI x Meme integrations are encouraged but not mandatory
+Working demo required (prototype, repo, or demo video)
+Token issuance is optional and will not influence judging outcomes
+Projects must comply with open-source licensing and IP requirements
+Participation is free
+Judging Criteria
+
+Projects will be evaluated through expert review (70%) and community voting (30%).
+
+Expert Evaluation (70%)
+
+Innovation — originality and depth of AI application (30%)
+Technical Implementation — code quality and demo stability (30%)
+Practical Value — user impact or commercial potential (20%)
+Presentation — clarity of pitch and execution capability (20%)
+Community Voting (30%)
+
+Top projects will be showcased publicly for community voting with anti-bot mechanisms.
+
+Contact us
+
+For hackathon support and inquiries:
+
+Official Website: https://four.meme
+X (Twitter): https://x.com/fourdotmemeZH
+Telegram AI Sprint - Developer Hangout: https://t.me/+6feGF7b-Rv4xMWFl
+About Four.meme
+
+Four.meme is a leading launchpad and cultural platform on BNB Chain focused on enabling new forms of internet-native innovation.
+DoraHacks
+FOLLOW US
+ABOUT
+Dora Research Blog
+DoraHacks Blog
+Dora Factory
+Changelog
+RESOURCES
+MACI/aMACI Voting
+Host a Hackathon
+Binance Live ↗
+YouTube ↗
+GRANTS
+Quadratic Funding
+ATOM Economic Zone Quadratic Grant
+Aptos Grant DAO
+Injective Grant DAO
+Flow Grant DAO
+CONTACT US
+
+Report Issue
+
+Message
+Telegram ↗
+Discord ↗
+Email ↗
+© 2026 DoraHacks. All rights reserved.
+Code of conduct
+|
+Privacy policy
+|
+Terms of service
+Share

@@ -1,0 +1,134 @@
+Build a web app called RoastLaunch.
+
+PROJECT SUMMARY:
+RoastLaunch is an AI-powered meme coin stress-tester built for the Four.meme AI Sprint hackathon on BNB Chain. Users type their meme coin idea, and three AI personas debate it in real time. At the end they get a Survive Score out of 100 plus a fixed launch brief. The app also pulls live Four.meme trending data, stores every roast result on BNB Chain (BSC), generates a shareable score card, and shows a public history feed of recent roasts.
+
+---
+
+TECH STACK:
+- Frontend: React + Vite + TypeScript
+- Styling: Tailwind CSS
+- AI: Anthropic Claude API (claude-sonnet-4-20250514)
+- Blockchain: ethers.js connected to BSC Mainnet (chain ID 56)
+- Backend: Express.js (Node) for API routes
+- No database needed — use in-memory array for history feed (last 10 roasts)
+
+---
+
+CORE FEATURES TO BUILD:
+
+FEATURE 1 — TOKEN IDEA INPUT
+- Clean landing page with a text input field
+- User types their meme coin idea (example: "a frog that trades crypto in its sleep")
+- Optional fields: token name, ticker symbol
+- A big "ROAST MY COIN" button triggers the debate
+- Below the input show a live meta badge: call the Four.meme API to get current trending tokens, run them through Claude to identify the dominant narrative (AI coins / dog coins / political / anime / other), show the user which meta is hot right now and whether their idea fits it
+
+FEATURE 2 — THREE PERSONA AI DEBATE
+- After clicking the button, show three debate panels side by side
+- Each panel has a character name, avatar emoji, and a typing animation while Claude generates
+- Make THREE separate Claude API calls in parallel, one per persona:
+
+  BULL persona prompt:
+  "You are the Bull, an ultra-optimistic degen crypto hype beast. You LOVE this token idea and will argue passionately why it will 100x. Be enthusiastic, use crypto slang (WAGMI, LFG, moon, chad), find every possible bullish angle. Keep response under 80 words."
+
+  SKEPTIC persona prompt:
+  "You are the Skeptic, a sharp CT analyst who has seen 10,000 tokens die. You poke holes in this idea ruthlessly but fairly. Question the narrative, the differentiation, the timing. Be blunt, not cruel. Use phrases like 'but why does this one matter' and 'the market already has'. Keep response under 80 words."
+
+  RUG DETECTOR persona prompt:
+  "You are the Rug Detector, a blockchain security expert and on-chain analyst. You analyze this token concept for red flags: missing tokenomics info, no community plan, dev credibility signals, copy-paste narrative. Give specific warnings. Use warning emoji. Keep response under 80 words."
+
+- Each persona gets the user's token idea, name, and ticker as context
+- Show the three responses streaming in simultaneously in their panels
+
+FEATURE 3 — SURVIVE SCORE
+- After all three personas respond, make a fourth Claude API call:
+
+  SCORING prompt:
+  "Based on this meme coin idea and these three debate perspectives, give a Survive Score from 0 to 100. Score it on: narrative originality (25 points), community potential (25 points), timing and meta fit (25 points), risk level (25 points, lower risk = higher score). Return ONLY a JSON object with this exact format: { score: number, narrative: number, community: number, timing: number, risk: number, verdict: 'NGMI' or 'DYOR' or 'WAGMI', summary: 'one sentence max 15 words', fixedBrief: 'three specific bullet points to improve this launch' }"
+
+- Display the score as a big animated number (0 to final score counting up)
+- Color code: 0-40 red (NGMI), 41-70 yellow (DYOR), 71-100 green (WAGMI)
+- Show the breakdown bars for each sub-score
+- Show the fixedBrief bullet points as actionable improvements
+
+FEATURE 4 — FOUR.MEME LIVE TRENDING DATA
+- On page load AND before scoring, fetch trending tokens from Four.meme API
+- Endpoint: GET https://four.meme/api/v1/token/list?sort=trending&limit=20
+- If that endpoint doesnt work try: https://four.meme/api/token/list or https://api.four.meme/token/list
+- Pass the trending token names and narratives as context to Claude when generating the Survive Score so it can compare the user's idea against what is actually trending right now
+- Show a small "Trending now on Four.meme" ticker at the top of the page with the top 5 token names scrolling
+
+FEATURE 5 — BNB CHAIN ON-CHAIN RECORD
+- After the roast completes, store the result on BSC Mainnet
+- Use ethers.js to send a small transaction (0 BNB value) to the BSC null address (0x000000000000000000000000000000000000dEaD) with the roast data encoded in the transaction memo/data field
+- The data field should contain: JSON.stringify({ tokenIdea, score, verdict, timestamp })
+- Encode it as hex using ethers.utils.hexlify(ethers.utils.toUtf8Bytes(data))
+- Show the BSC transaction hash on the results page as a link to bscscan.com
+- Add a MetaMask connect button in the header — user needs to connect wallet to save on-chain
+- If user has not connected wallet, show the roast results anyway but show a "Save on-chain" button that triggers wallet connect then submits the tx
+
+FEATURE 6 — SHAREABLE SCORE CARD
+- After roast completes, generate a shareable card using HTML Canvas or a styled div
+- Card should show: RoastLaunch logo/title, token idea text, Survive Score big number, verdict badge (WAGMI/DYOR/NGMI), the one-line summary, Bull quote snippet, Rug Detector top warning, BNB Chain tx hash (last 8 chars), timestamp
+- Style it dark themed, crypto aesthetic, clean
+- "Download Card" button saves it as PNG using html2canvas library
+- "Share on X" button opens twitter.com/intent/tweet with pre-filled text: "Just roasted my meme coin idea on RoastLaunch 🔥 Survive Score: X/100 — [verdict] [summary] #RoastLaunch #FourMeme #BNBChain"
+
+FEATURE 7 — PUBLIC HISTORY FEED
+- Show the last 10 roasts in a scrollable feed below the main input
+- Each history card shows: token idea (truncated), score, verdict badge, timestamp, link to view full roast
+- Store history in memory on the Express backend (array of last 10 results)
+- Auto-update when a new roast completes
+- Make the history cards clickable to expand and show full debate
+
+FEATURE 8 — META TREND BADGE
+- Pull Four.meme trending data
+- Ask Claude to classify what narrative is dominant right now (one of: AI coins, Dog coins, Political, Anime, Degen humor, Other)
+- Show a badge at the top: "🔥 Hot meta right now: [narrative]"
+- When scoring, tell Claude whether the user's idea matches the hot meta and adjust the timing score accordingly
+- Show "✅ Fits current meta" or "⚠️ Off-meta — harder to trend" on the results page
+
+---
+
+UI / DESIGN REQUIREMENTS:
+- Dark theme, black background, neon green and orange accents
+- Crypto-native aesthetic — feels like a degen tool not a corporate app
+- Mobile responsive
+- The three persona panels should have distinct visual styles:
+  Bull: green border, bull emoji 🐂
+  Skeptic: blue border, magnifying glass emoji 🧐  
+  Rug Detector: red border, siren emoji 🚨
+- Smooth animations — typing dots while loading, count-up for score
+- Show a progress indicator during the roast: "Calling the Bull... Calling the Skeptic... Calling the Rug Detector... Calculating Survive Score..."
+
+---
+
+ENVIRONMENT VARIABLES NEEDED:
+- ANTHROPIC_API_KEY — for Claude API calls (server side only, never expose to frontend)
+- No other API keys needed — Four.meme is public, BSC writes need user's own MetaMask wallet
+
+---
+
+API ROUTES (Express backend):
+- POST /api/roast — takes { tokenIdea, tokenName, ticker }, calls Claude for all 3 personas + score, returns full debate + score object
+- GET /api/trending — fetches and returns Four.meme trending data + Claude meta classification
+- GET /api/history — returns last 10 roast results
+- POST /api/history — saves a new roast result to history
+
+---
+
+IMPORTANT NOTES:
+- All Claude API calls must happen server-side in Express routes, never from the browser
+- The Anthropic API key must never be exposed in frontend code
+- Handle API errors gracefully — if Four.meme API fails, skip trending data and continue
+- If MetaMask is not installed, show a message but still show roast results
+- The app must work even without a connected wallet — wallet is only needed for on-chain saving
+- Use streaming for Claude responses if possible so text appears word by word in each persona panel
+- The app should be fully functional and impressive for a hackathon demo video
+
+---
+
+PROJECT NAME: RoastLaunch
+TAGLINE: Your meme coin idea. Three judges. One brutal truth.
+TARGET: Four.meme AI Sprint Hackathon — $50,000 prize pool on BNB Chain

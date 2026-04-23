@@ -1,0 +1,457 @@
+We are building RoastLaunch for the Four.meme AI Sprint hackathon. 
+$50,000 prize pool. We need to win top 3. Here is the complete 
+spec with every feature:
+
+PROJECT NAME: RoastLaunch
+TAGLINE: Your meme coin idea. Three judges. One brutal truth.
+BUILT FOR: Four.meme AI Sprint Hackathon — BNB Chain
+TECH STACK:
+- Frontend: React + Vite + TypeScript
+- Styling: Tailwind CSS
+- AI: Google Gemini API (gemini-1.5-flash)
+- Blockchain: ethers.js on BSC Mainnet (chain ID 56)
+- Backend: Express.js for all API routes
+- Environment variable: GEMINI_API_KEY
+
+---
+
+SECTION 1 — HERO LANDING
+
+Full width dramatic hero above everything:
+- Headline: "97% of meme coins die in 48 hours."
+- Subheadline: "Find out if yours survives — before you spend 
+  a single dollar launching it."
+- Badge: "🔥 [X] coins roasted today" using live counter
+- Animated dark background slowly shifting between #0a0a0a 
+  and #1a0500
+- Floating crypto particles drifting upward slowly:
+  🪙 💎 🚀 🐸 randomly placed, slow drift animation
+- Navigation links: Home, Battle Mode, Meta Dashboard, 
+  Leaderboard
+
+---
+
+SECTION 2 — LIVE META BADGE
+
+Sticky bar below header showing:
+"🔥 Hot meta right now: [narrative]"
+Call GET /api/trending on load
+Gemini classifies trending Four.meme tokens into:
+AI coins / Dog coins / Political / Anime / Degen humor / Other
+Auto refreshes every 60 seconds
+Scrolling ticker showing top 5 trending token names
+
+---
+
+SECTION 3 — INPUT FORM
+
+- Large dark card with subtle orange border glow
+- Main textarea: "Describe your meme coin idea..."
+- Two optional inputs: Token Name, Ticker Symbol  
+- Four preset buttons below input that fill the box on click:
+  "🐸 Frog that trades in its sleep"
+  "🤖 AI agent that rugs itself"
+  "🐕 Dog that pays crypto taxes"
+  "👟 Elon's left shoe token"
+- ROAST MY COIN button:
+  Full width, animated gradient orange to green
+  Slight shake animation on hover
+  On click: changes to "🔥 ROASTING..." with spinner
+- On click show dramatic fullscreen overlay countdown:
+  "3" pause "2" pause "1" pause "🔥 ROASTING" 
+  then fade out to reveal results
+
+---
+
+SECTION 4 — THREE PERSONA DEBATE PANELS
+
+Show three panels side by side after roast triggers.
+Make THREE parallel Gemini API calls server side.
+Never expose GEMINI_API_KEY to frontend.
+
+BULL panel (left):
+- Pulsing glowing green border animation
+- Dark green tinted background
+- Large 🐂 emoji at top center
+- Title: "THE BULL"
+- Subtitle: "Degen optimist"
+- Confidence meter bar fills green as text loads
+- Gemini system prompt:
+  "You are The Bull, an ultra-optimistic degen crypto hype 
+  beast. You LOVE this token idea. Argue passionately why 
+  it will 100x. Use crypto slang: WAGMI, LFG, moon, chad, 
+  based, ngmi for haters. Find every bullish angle. Be 
+  enthusiastic and entertaining. Max 80 words."
+
+SKEPTIC panel (center):
+- Pulsing glowing blue border animation
+- Dark blue tinted background  
+- Large 🧐 emoji at top center
+- Title: "THE SKEPTIC"
+- Subtitle: "CT analyst"
+- Confidence meter bar fills blue as text loads
+- Gemini system prompt:
+  "You are The Skeptic, a sharp Crypto Twitter analyst who 
+  has seen 10,000 tokens die. Poke holes in this idea 
+  ruthlessly but fairly. Question the narrative, 
+  differentiation, timing. Use phrases like 'but why does 
+  this one matter' and 'the market already has X'. Be blunt 
+  not cruel. Max 80 words."
+
+RUG DETECTOR panel (right):
+- Pulsing glowing red border animation
+- Dark red tinted background
+- Large 🚨 emoji at top center
+- Title: "RUG DETECTOR"
+- Subtitle: "On-chain analyst"
+- Confidence meter bar fills red as text loads
+- Gemini system prompt:
+  "You are The Rug Detector, a blockchain security expert. 
+  Analyze this token concept for red flags: missing 
+  tokenomics, no community plan, copy-paste narrative, 
+  dev credibility issues. Give specific warnings with 
+  warning emojis ⚠️. Be direct and specific. Max 80 words."
+
+All three panels get this context:
+- Token idea text
+- Token name if provided
+- Ticker if provided
+- Current trending meta from Four.meme
+
+Text in each panel types out word by word typewriter effect
+after API response arrives.
+
+---
+
+SECTION 5 — SURVIVE SCORE REVEAL
+
+After all three personas respond make a fourth Gemini API call.
+
+Gemini prompt:
+"Based on this meme coin idea and these three debate 
+perspectives, give a Survive Score. Return ONLY valid JSON:
+{
+  score: number 0-100,
+  rugProbability: number 0-100,
+  narrative: number 0-25,
+  community: number 0-25,
+  timing: number 0-25,
+  risk: number 0-25,
+  verdict: 'NGMI' or 'DYOR' or 'WAGMI',
+  summary: 'one sentence max 15 words',
+  fixedBrief: ['bullet 1', 'bullet 2', 'bullet 3'],
+  sevenDayPlan: {
+    day1: 'what to do day 1',
+    day2: 'what to do day 2',
+    day3: 'what to do day 3',
+    day4: 'what to do day 4',
+    day5: 'what to do day 5',
+    day6: 'what to do day 6',
+    day7: 'what to do day 7'
+  },
+  memeTexts: ['meme caption 1', 'meme caption 2', 'meme caption 3'],
+  metaFit: true or false
+}"
+
+SCORE DISPLAY:
+- Dramatic full width reveal section
+- Score number counts up from 0 to final with large font
+- Circular progress ring animates around score number
+- Color: green if WAGMI, yellow if DYOR, red if NGMI
+
+WAGMI (70-100):
+- Green confetti explosion across full screen
+- Big message: "🎉 YOUR COIN MIGHT ACTUALLY MAKE IT"
+- Green glow across entire page for 2 seconds
+
+DYOR (40-69):
+- Yellow pulsing flash
+- Message: "⚠️ NEEDS WORK BUT HAS POTENTIAL"
+
+NGMI (0-39):
+- Screen shakes animation
+- Red flash across page
+- Message: "💀 THIS COIN IS DEAD ON ARRIVAL"
+- Skull emoji rains down
+
+RUG PROBABILITY:
+- Show separately: "☠️ Rug Probability: X%"
+- Red progress bar
+- If above 60% show flashing warning
+
+SUB SCORES:
+- Four animated filling bars:
+  Narrative Originality X/25
+  Community Potential X/25
+  Meta Timing X/25
+  Risk Level X/25
+
+FIXED LAUNCH BRIEF:
+- Show three bullet points from fixedBrief
+- Title: "🛠️ How to fix this before launch:"
+
+META FIT BADGE:
+- If metaFit true: "✅ Fits current Four.meme meta"
+- If metaFit false: "⚠️ Off-meta — harder to trend right now"
+
+FOUR.MEME LAUNCH BUTTON:
+- Only show if score above 50
+- Big button: "🚀 Launch this on Four.meme →"
+- Links to: https://four.meme/en/create-token
+- Subtext: "Your idea has been stress-tested. Time to ship."
+
+---
+
+SECTION 6 — 7 DAY LAUNCH PLAYBOOK
+
+Below the score show expandable section:
+Title: "📅 Your 7-Day Launch Playbook"
+Show day by day plan from sevenDayPlan in the JSON
+Each day is a card: Day 1, Day 2... Day 7
+Collapsible — collapsed by default, click to expand
+Style like a roadmap timeline
+
+---
+
+SECTION 7 — MEME GENERATOR
+
+Below playbook show:
+Title: "🎭 Auto-Generated Memes for Your Token"
+Show three dark-themed text meme cards using memeTexts from JSON
+Each meme card:
+- Black background
+- Large bold white top text (token name or idea)
+- Orange bottom caption text from memeTexts
+- "Download" button saves card as PNG using html2canvas
+- "Share on X" button
+
+---
+
+SECTION 8 — COMMUNITY VOTING
+
+After roast completes show voting section:
+Title: "🗳️ What does the community think?"
+Three vote buttons:
+- 🐂 Bull (I'd buy this) — green button
+- 🧐 Skeptic (Needs work) — blue button  
+- 🚨 Rug (Stay away) — red button
+Show live vote counts updating in real time
+Store votes in memory on Express backend
+Show percentage bars for each vote type
+Show total votes count
+
+---
+
+SECTION 9 — SHARE CARD
+
+After roast show beautiful shareable card:
+- Dark background #0a0a0a
+- RoastLaunch logo top left
+- Token idea text
+- HUGE score number center
+- Verdict badge (WAGMI/DYOR/NGMI) 
+- One line summary
+- Best Bull quote snippet
+- Top Rug warning
+- BNB Chain tx hash last 8 chars
+- Timestamp
+- "roastlaunch.replit.app" watermark bottom
+
+Two buttons:
+- "📸 Download Card" saves as PNG via html2canvas
+- "🐦 Share on X" opens:
+  twitter.com/intent/tweet?text=Just roasted [tokenName] 
+  on RoastLaunch 🔥 Survive Score: [score]/100 — [verdict] 
+  [summary] #RoastLaunch #FourMeme #BNBChain
+
+---
+
+SECTION 10 — BNB CHAIN ON-CHAIN RECORD
+
+After roast completes:
+- Use ethers.js to send 0 BNB transaction to BSC
+- Target: 0x000000000000000000000000000000000000dEaD
+- Data field: hex encoded JSON of roast result
+- Show tx hash as link to bscscan.com
+- MetaMask connect button in header
+- If no wallet: show roast results anyway
+- Show "Save on-chain" button that triggers wallet connect
+- Show "⛓️ Permanently recorded on BNB Chain" badge with tx link
+
+---
+
+SECTION 11 — BATTLE MODE PAGE
+
+Separate page at /battle:
+Title: "🥊 Roast Battle — Two Coins Enter. One Survives."
+Two input boxes side by side: Coin A vs Coin B
+BATTLE button triggers two parallel roasts
+Show both debate panels side by side
+After both complete: Gemini picks a winner with explanation
+Show winner with trophy animation 🏆
+Show: "[Coin A] DESTROYS [Coin B] in the roast arena"
+Share button: "My coin beat [Coin B] on RoastLaunch 🥊"
+
+---
+
+SECTION 12 — META INTELLIGENCE DASHBOARD PAGE
+
+Separate page at /meta:
+Title: "📊 Four.meme Meta Intelligence"
+Pull live trending data from Four.meme API
+
+Show four sections:
+
+WINNING NARRATIVES RIGHT NOW:
+- Bar chart of top narratives by token count
+- Which themes are graduating vs rugging
+- Color coded green (graduating) red (rugging)
+
+LAUNCH TIMING INTELLIGENCE:
+- "Best time to launch today: [time]"
+- Activity heatmap by hour (fake realistic data is fine)
+- "Peak degen hours: 2pm-4pm UTC"
+
+THE GRAVEYARD:
+- Show 5 recently failed token concepts (use trending data)
+- Why they failed (AI generated one line each)
+- Title: "💀 These ideas died this week. Learn from them."
+
+META FORECAST:
+- "What narrative will trend next week"
+- AI prediction based on current data
+- Confidence percentage
+
+---
+
+SECTION 13 — LEADERBOARD PAGE
+
+Separate page at /leaderboard:
+
+HALL OF FAME — Top 5 highest scoring coins:
+Preload with funny hardcoded examples:
+1. "Diamond-handed AI trading bot" — 94/100 WAGMI
+2. "Frog that predicted every crash" — 89/100 WAGMI  
+3. "Based cat that never rugs" — 85/100 WAGMI
+4. "Dog that pays its own gas fees" — 82/100 WAGMI
+5. "Sleepy bear accumulation token" — 78/100 WAGMI
+
+WALL OF SHAME — Top 5 lowest scoring coins:
+1. "Exact copy of PEPE but worse" — 4/100 NGMI
+2. "Dev wallet holds 90 percent" — 8/100 NGMI
+3. "No website no telegram no plan" — 11/100 NGMI
+4. "My name token buy it now" — 14/100 NGMI
+5. "Another dog coin nothing new" — 17/100 NGMI
+
+Replace hardcoded data with real data as roasts come in.
+
+---
+
+SECTION 14 — RECENT ROASTS FEED
+
+On homepage below input:
+Title: "🔥 Recent Roasts"
+Last 10 roasts from memory
+Each card shows:
+- Token idea truncated
+- Score with color
+- Verdict badge
+- Rug probability
+- Community vote counts
+- Timestamp
+- Click to expand full roast
+New cards slide in from bottom with animation
+"🔥 X coins roasted today" counter at top
+
+---
+
+SECTION 15 — HEADER AND FOOTER
+
+HEADER:
+- RoastLaunch logo with neon orange glow pulse
+- Navigation: Home / Battle / Meta / Leaderboard
+- Live counter: "🔥 X coins roasted"
+- "● BNB Chain Live" green indicator
+- "Powered by Gemini AI" small badge
+- Connect Wallet button
+
+FOOTER:
+- "Built for Four.meme AI Sprint · $50K Hackathon · BNB Chain"
+- "Stress-test your meme coin before it dies"
+- GitHub link placeholder
+- Demo video link placeholder
+
+---
+
+BACKEND API ROUTES (Express):
+
+POST /api/roast
+- Input: { tokenIdea, tokenName, ticker }
+- Make 3 parallel Gemini calls for personas
+- Make 1 Gemini call for scoring
+- Return: { bull, skeptic, rugDetector, score }
+- Save to history array (max 10)
+- Never expose GEMINI_API_KEY to frontend
+
+GET /api/trending  
+- Fetch Four.meme trending tokens
+- Try: https://four.meme/api/v1/token/list?sort=trending&limit=20
+- Backup: https://api.four.meme/token/list
+- If both fail: return mock trending data so app never breaks
+- Run Gemini to classify dominant narrative
+- Return: { narrative, tokens, metaBadge }
+
+GET /api/history
+- Return last 10 roasts from memory array
+
+POST /api/history
+- Save new roast to memory array
+- Keep max 10, remove oldest
+
+GET /api/votes/:roastId
+- Return vote counts for a roast
+
+POST /api/votes/:roastId
+- Add a vote (bull/skeptic/rug)
+- Return updated counts
+
+POST /api/battle
+- Input: { coinA, coinB }
+- Run two parallel roasts
+- Run Gemini to declare winner
+- Return both roasts + winner declaration
+
+GET /api/meta
+- Return meta intelligence data
+- Trending narratives, timing data, graveyard tokens
+- Use Gemini to generate forecast
+
+---
+
+IMPORTANT:
+- All Gemini API calls server side only
+- GEMINI_API_KEY only in environment variables never in code
+- Handle all API errors gracefully — app never crashes
+- If Four.meme API fails use mock data and continue
+- If Gemini fails show friendly error message
+- Mobile responsive — works perfectly on phone
+- All pages accessible from navigation
+- App must work without MetaMask connected
+- Wallet only needed for on-chain save feature
+- Make it look and feel like a premium crypto tool
+- Dark theme throughout — #0a0a0a background
+- Neon orange (#ff6b00) and green (#00ff88) accents
+- Crypto-native aesthetic throughout
+
+---
+
+DEMO PRIORITY ORDER:
+If anything breaks, prioritize in this order:
+1. Three persona debate working
+2. Survive Score displaying
+3. Share card generating
+4. History feed updating
+5. Battle mode working
+6. Meta dashboard showing
+7. BNB Chain recording
+8. Community voting

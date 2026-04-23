@@ -1,0 +1,34 @@
+import { Router, type IRouter } from "express";
+import healthRouter from "./health";
+import roastRouter from "./roast";
+import votesRouter from "./votes";
+import battleRouter from "./battle";
+import metaRouter from "./meta";
+import memeImageRouter from "./memeImage";
+import usersRouter from "./users";
+import activityRouter from "./activity";
+import communityRouter from "./community";
+import chatRouter from "./chat";
+import watchlistRouter from "./watchlist";
+import profileRouter from "./profile";
+import battleRequestsRouter from "./battleRequests";
+import recapRouter from "./recap";
+
+const router: IRouter = Router();
+
+router.use(healthRouter);
+router.use(roastRouter);
+router.use(votesRouter);
+router.use(battleRouter);
+router.use(metaRouter);
+router.use(memeImageRouter);
+router.use(usersRouter);
+router.use(activityRouter);
+router.use(communityRouter);
+router.use(chatRouter);
+router.use(watchlistRouter);
+router.use(profileRouter);
+router.use(battleRequestsRouter);
+router.use(recapRouter);
+
+export default router;

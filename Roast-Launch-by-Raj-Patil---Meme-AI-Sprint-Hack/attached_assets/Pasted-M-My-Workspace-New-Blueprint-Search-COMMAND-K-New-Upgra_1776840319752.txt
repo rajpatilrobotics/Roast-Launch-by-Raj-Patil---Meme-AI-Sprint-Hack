@@ -1,0 +1,82 @@
+M
+My Workspace
+New Blueprint
+
+Search
+COMMAND+K
+
+New
+
+Upgrade
+
+
+R
+You are deploying from a Blueprint for rajpatilrobotics/Roast-Launch-by-Raj-Patil---Meme-AI-Sprint-Hack
+Blueprint Name
+A unique name for your Blueprint.
+
+Branch
+The repository branch with the render.yaml file.
+Branch
+
+Blueprint Path
+The path to the Blueprint file in your repo (e.g., infra/render.yaml). Defaults to render.yaml at the root of your repository.
+
+Review Blueprint configurations from rajpatilrobotics/Roast-Launch-by-Raj-Patil---Meme-AI-Sprint-Hack.
+All future updates to your Blueprint file will be synced automatically, which may change your costs.
+A Blueprint file was found, but there was an issue.
+services[1]
+static sites cannot have a region
+
+services:
+  - type: web
+    name: roastlaunch-api
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: .
+    buildCommand: |
+      corepack enable
+      pnpm install --frozen-lockfile
+      pnpm --filter @workspace/api-server run build
+    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    healthCheckPath: /api/healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+  - type: web
+    name: roastlaunch-web
+    runtime: static
+    plan: free
+    region: oregon
+    rootDir: .
+    buildCommand: |
+      corepack enable
+      pnpm install --frozen-lockfile
+      pnpm --filter @workspace/roastlaunch run build
+    staticPublishPath: artifacts/roastlaunch/dist/public
+    autoDeploy: true
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: BASE_PATH
+        value: /
+      # After the API service deploys, set this to its full URL,
+      # e.g. https://roastlaunch-api.onrender.com
+      - key: VITE_API_BASE
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+Retry
+0 services selected:
+
+Move
+
