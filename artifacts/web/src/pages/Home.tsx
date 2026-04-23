@@ -115,6 +115,22 @@ function CountUp({ to, duration = 1500 }: { to: number; duration?: number }) {
   return <>{n}</>;
 }
 
+function SectionHeader({ step, title, subtitle, muted = false }: { step?: string; title: string; subtitle?: string; muted?: boolean }) {
+  return (
+    <div className="mb-3 flex items-baseline gap-3">
+      {step && (
+        <span className={`shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full font-mono text-[11px] font-bold ${muted ? "bg-zinc-900 text-zinc-500 border border-zinc-800" : "bg-orange-500/15 text-orange-300 border border-orange-500/40"}`}>
+          {step}
+        </span>
+      )}
+      <div className="min-w-0">
+        <h2 className={`text-base sm:text-lg font-black tracking-tight ${muted ? "text-zinc-400" : "text-zinc-100"}`}>{title}</h2>
+        {subtitle && <p className="text-[11px] font-mono text-zinc-500 mt-0.5">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
 function Bar({ label, value, max = 25, color = "from-green-500 to-orange-400" }: { label: string; value: number; max?: number; color?: string }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
   return (
@@ -333,11 +349,12 @@ export default function Home() {
       </div>
 
       {/* Input */}
-      <main className="max-w-6xl mx-auto px-4 md:px-6 py-6">
+      <main className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        <SectionHeader step="1" title="Pitch your meme coin" subtitle="One line. Free. ~30 seconds. No wallet needed." />
         <div className="rounded-2xl border-2 border-orange-500/40 bg-black/60 p-5 md:p-6 glow-orange">
           <div className="flex items-baseline justify-between mb-2 flex-wrap gap-2">
-            <label className="block text-xs font-mono uppercase text-orange-400">Step 1 · Pitch your meme coin in one line</label>
-            <span className="text-[10px] font-mono text-zinc-500">⚡ free · ~30 sec · no wallet needed</span>
+            <label className="block text-xs font-mono uppercase text-orange-400">Your idea</label>
+            <span className="text-[10px] font-mono text-zinc-500">⚡ free · ~30 sec</span>
           </div>
           <textarea
             value={tokenIdea}
@@ -389,16 +406,19 @@ export default function Home() {
 
         <div ref={resultsRef} />
 
-        {/* Personas */}
+        {/* Step 2 · Judges */}
         {(loading || roast) && (
-          <div className="grid md:grid-cols-3 gap-4 mt-6">
-            <Persona title="The Bull" subtitle="Degen optimist" emoji="🐂" color="border-green-500/60" glow="glow-green" meterColor="bg-green-500" text={roast?.bull || ""} loading={loading} />
-            <Persona title="The Skeptic" subtitle="CT analyst" emoji="🧐" color="border-blue-500/60" glow="glow-blue" meterColor="bg-blue-500" text={roast?.skeptic || ""} loading={loading} />
-            <Persona title="Rug Detector" subtitle="On-chain analyst" emoji="🚨" color="border-red-500/60" glow="glow-red" meterColor="bg-red-500" text={roast?.rug || ""} loading={loading} />
-          </div>
+          <section className="mt-10">
+            <SectionHeader step="2" title="Meet the AI judges" subtitle="Three personas roast your pitch — bullish, skeptical, and on-chain." />
+            <div className="grid md:grid-cols-3 gap-4">
+              <Persona title="The Bull" subtitle="Degen optimist" emoji="🐂" color="border-green-500/60" glow="glow-green" meterColor="bg-green-500" text={roast?.bull || ""} loading={loading} />
+              <Persona title="The Skeptic" subtitle="CT analyst" emoji="🧐" color="border-blue-500/60" glow="glow-blue" meterColor="bg-blue-500" text={roast?.skeptic || ""} loading={loading} />
+              <Persona title="Rug Detector" subtitle="On-chain analyst" emoji="🚨" color="border-red-500/60" glow="glow-red" meterColor="bg-red-500" text={roast?.rug || ""} loading={loading} />
+            </div>
+          </section>
         )}
 
-        {/* Score reveal */}
+        {/* Verdict */}
         {roast && (
           <div className={`mt-8 rounded-2xl border-2 p-6 ${verdictColor(roast.verdict).split(" ").slice(1).join(" ")} ${verdictBigClass}`}>
             <div className="text-center">
@@ -428,156 +448,177 @@ export default function Home() {
           </div>
         )}
 
+        {/* === RESULT — clean stepped flow === */}
         {roast && (
-          <div className="grid md:grid-cols-2 gap-6 mt-6">
-            {/* Sub-scores + rug + brief + chain */}
-            <div className="rounded-2xl border border-zinc-800 bg-black/60 p-6 space-y-5">
-              <div>
-                <h3 className="font-mono uppercase text-xs text-zinc-400 mb-3">Score Breakdown</h3>
-                <div className="space-y-3">
+          <div className="space-y-10 mt-10">
+
+            {/* Step 3 · Numbers */}
+            <section>
+              <SectionHeader step="3" title="The numbers" subtitle="How your idea scored across four dimensions." />
+              <div className="rounded-2xl border border-zinc-800 bg-black/60 p-6 space-y-6">
+                <div className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
                   <Bar label="Narrative" value={roast.narrative} />
                   <Bar label="Community" value={roast.community} />
                   <Bar label="Timing" value={roast.timing} />
                   <Bar label="Risk" value={roast.risk} />
                 </div>
-              </div>
 
-              <div>
-                <div className="flex justify-between text-xs font-mono uppercase mb-1">
-                  <span className="text-red-400">☠️ Rug Probability</span>
-                  <span className={`${roast.rugProbability >= 60 ? "text-red-400 animate-pulse" : "text-zinc-200"}`}>{roast.rugProbability}%</span>
-                </div>
-                <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden">
-                  <div className={`h-full ${roast.rugProbability >= 60 ? "bg-red-500 animate-pulse" : "bg-orange-500"}`} style={{ width: `${roast.rugProbability}%` }} />
-                </div>
-                {roast.rugProbability >= 60 && (
-                  <div className="mt-1 text-[11px] font-mono text-red-400">⚠️ High rug risk — fix this before launching.</div>
-                )}
-              </div>
+                <div className="grid sm:grid-cols-2 gap-6 pt-2 border-t border-zinc-900">
+                  <div>
+                    <div className="flex justify-between text-xs font-mono uppercase mb-1">
+                      <span className="text-red-400">☠️ Rug Probability</span>
+                      <span className={`${roast.rugProbability >= 60 ? "text-red-400 animate-pulse" : "text-zinc-200"}`}>{roast.rugProbability}%</span>
+                    </div>
+                    <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden">
+                      <div className={`h-full ${roast.rugProbability >= 60 ? "bg-red-500 animate-pulse" : "bg-orange-500"}`} style={{ width: `${roast.rugProbability}%` }} />
+                    </div>
+                    {roast.rugProbability >= 60 && (
+                      <div className="mt-1 text-[11px] font-mono text-red-400">⚠️ High rug risk — fix before launching.</div>
+                    )}
+                  </div>
 
-              <div data-testid="graduation-probability">
-                <div className="flex justify-between text-xs font-mono uppercase mb-1">
-                  <span className="text-purple-300">🎓 Graduation Probability</span>
-                  <span className={`${roast.graduationProbability >= 60 ? "text-purple-300" : "text-zinc-200"}`}>{roast.graduationProbability}%</span>
+                  <div data-testid="graduation-probability">
+                    <div className="flex justify-between text-xs font-mono uppercase mb-1">
+                      <span className="text-purple-300">🎓 Graduation Probability</span>
+                      <span className={`${roast.graduationProbability >= 60 ? "text-purple-300" : "text-zinc-200"}`}>{roast.graduationProbability}%</span>
+                    </div>
+                    <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${roast.graduationProbability >= 60 ? "bg-gradient-to-r from-purple-500 to-pink-400" : "bg-purple-500/60"}`}
+                        style={{ width: `${roast.graduationProbability}%` }}
+                      />
+                    </div>
+                    {roast.graduationReason && (
+                      <div className="mt-1 text-[11px] font-mono text-purple-300/80 line-clamp-2">{roast.graduationReason}</div>
+                    )}
+                  </div>
                 </div>
-                <div className="h-2.5 bg-zinc-900 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${roast.graduationProbability >= 60 ? "bg-gradient-to-r from-purple-500 to-pink-400" : "bg-purple-500/60"}`}
-                    style={{ width: `${roast.graduationProbability}%` }}
-                  />
-                </div>
-                {roast.graduationReason && (
-                  <div className="mt-1 text-[11px] font-mono text-purple-300/80">{roast.graduationReason}</div>
-                )}
-                <div className="mt-0.5 text-[10px] font-mono text-zinc-600">
-                  Odds of hitting Four.meme's ~$80K mcap → migrate to PancakeSwap.
+
+                <div className="text-xs font-mono pt-2 border-t border-zinc-900">
+                  {roast.fitsMeta ? (
+                    <span className="text-green-400">✅ Fits current meta ({roast.hotMeta})</span>
+                  ) : (
+                    <span className="text-orange-400">⚠️ Off-meta — harder to trend right now (hot: {roast.hotMeta})</span>
+                  )}
                 </div>
               </div>
+            </section>
 
-              <div className="text-xs font-mono">
-                {roast.fitsMeta ? (
-                  <span className="text-green-400">✅ Fits current meta ({roast.hotMeta})</span>
-                ) : (
-                  <span className="text-orange-400">⚠️ Off-meta — harder to trend right now (hot: {roast.hotMeta})</span>
-                )}
-              </div>
-
-              <div>
-                <h3 className="text-xs font-mono uppercase text-orange-400 mb-2">🛠️ How to fix this before launch</h3>
-                <ul className="space-y-1.5 text-sm text-zinc-200">
+            {/* Step 4 · Recovery plan */}
+            <section>
+              <SectionHeader step="4" title="Fix it before you launch" subtitle="Specific, concrete tweaks the AI thinks will move your score." />
+              <div className="rounded-2xl border border-zinc-800 bg-black/60 p-6">
+                <ul className="space-y-2 text-sm text-zinc-200">
                   {roast.fixedBrief.map((b, i) => (
                     <li key={i} className="flex gap-2">
-                      <span className="text-green-400">→</span>
+                      <span className="text-green-400 mt-0.5">→</span>
                       <span>{b}</span>
                     </li>
                   ))}
                 </ul>
               </div>
+              <div className="mt-4">
+                <Playbook plan={roast.sevenDayPlan} />
+              </div>
+            </section>
 
+            {/* Step 5 · Launch */}
+            <section>
+              <SectionHeader step="5" title="Launch on Four.meme" subtitle="Pre-flight checklist + one-tap launch with autofilled details." />
               <LaunchPanel
                 roast={roast}
                 onLaunchedConfetti={() => setShowConfetti("wagmi")}
               />
+            </section>
 
-              <div className="pt-4 border-t border-zinc-800">
+            {/* Step 6 · Share */}
+            <section>
+              <SectionHeader step="6" title="Make it shareable" subtitle="Memes, a downloadable card, and one-click share to X." />
+              <div className="grid md:grid-cols-2 gap-6 items-start">
+                <div className="space-y-3">
+                  <div ref={cardRef} className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-black border-2 border-green-500/40" style={{ minHeight: 460 }}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-black text-lg">
+                        <span className="text-orange-400">Roast</span><span className="text-green-400">Launch</span>
+                      </div>
+                      <div className={`px-2 py-0.5 rounded text-[10px] font-mono ${verdictColor(roast.verdict)}`}>{roast.verdict}</div>
+                    </div>
+                    <div className="text-zinc-300 text-sm mb-2">"{roast.tokenIdea}"</div>
+                    {roast.ticker && <div className="font-mono text-xs text-orange-400 mb-3">${roast.ticker}</div>}
+                    <div className={`text-center text-6xl font-black font-mono my-4 ${scoreColor(roast.score)}`}>
+                      {roast.score}<span className="text-2xl text-zinc-600">/100</span>
+                    </div>
+                    <div className="text-zinc-300 text-xs italic text-center mb-2">"{roast.summary}"</div>
+                    <div className="text-center text-[11px] font-mono text-red-400 mb-3">☠️ Rug Probability: {roast.rugProbability}%</div>
+                    <div className="space-y-2 text-xs">
+                      <div className="border-l-2 border-green-500 pl-2 text-zinc-300">
+                        <span className="text-green-400 font-mono">🐂 BULL: </span>{roast.bull.slice(0, 110)}…
+                      </div>
+                      <div className="border-l-2 border-red-500 pl-2 text-zinc-300">
+                        <span className="text-red-400 font-mono">🚨 RUG: </span>{roast.rug.slice(0, 110)}…
+                      </div>
+                    </div>
+                    <div className="mt-4 flex justify-between text-[10px] font-mono text-zinc-500">
+                      <span>{roast.txHash ? `BSC: ${roast.txHash.slice(-8)}` : "off-chain"}</span>
+                      <span>roastlaunch · {new Date(roast.timestamp).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={downloadCard} className="py-3 rounded-lg border border-green-500/60 text-green-400 font-mono text-sm hover-elevate">⬇ Download Card</button>
+                    <button onClick={shareOnX} className="py-3 rounded-lg bg-white text-black font-mono text-sm hover:bg-zinc-200">𝕏 Share on X</button>
+                  </div>
+                </div>
+                <div>
+                  <MemeCards tokenName={roast.tokenName || roast.ticker || "YOUR COIN"} memeTexts={roast.memeTexts} />
+                </div>
+              </div>
+              <div className="mt-6">
+                <Voting roastId={roast.id} />
+              </div>
+            </section>
+
+            {/* Step 7 · On-chain proof (subtle) */}
+            <section>
+              <SectionHeader step="7" title="Prove it on-chain" subtitle="Optional — anchor this roast permanently to BNB Chain." muted />
+              <div className="rounded-2xl border border-zinc-800 bg-black/40 p-5">
                 {tx ? (
                   <TxReceipt tx={tx} />
                 ) : chainSaving ? (
-                  <div className="rounded-xl border border-orange-500/40 bg-orange-500/5 p-4" data-testid="tx-submitting">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full border-2 border-orange-500/30 border-t-orange-400 animate-spin" />
-                      <div>
-                        <div className="text-sm font-bold text-orange-300">Submitting transaction...</div>
-                        <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
-                          Broadcasting to {CHAIN.label}
-                        </div>
+                  <div className="flex items-center gap-3" data-testid="tx-submitting">
+                    <div className="w-9 h-9 rounded-full border-2 border-orange-500/30 border-t-orange-400 animate-spin shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm font-bold text-orange-300">Submitting transaction...</div>
+                      <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+                        Broadcasting to {CHAIN.label}
                       </div>
-                    </div>
-                    <div className="mt-3 h-1 w-full overflow-hidden rounded bg-zinc-900">
-                      <div
-                        className="h-full bg-gradient-to-r from-orange-500 to-green-400"
-                        style={{ animation: "txbar 2.5s ease-in-out infinite" }}
-                      />
+                      <div className="mt-2 h-1 w-full overflow-hidden rounded bg-zinc-900">
+                        <div
+                          className="h-full bg-gradient-to-r from-orange-500 to-green-400"
+                          style={{ animation: "txbar 2.5s ease-in-out infinite" }}
+                        />
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <>
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="text-[11px] font-mono text-zinc-500">
+                      Permanently anchor this roast to {CHAIN.label}.
+                    </div>
                     <button
                       onClick={saveOnChain}
                       disabled={chainSaving}
-                      className="w-full py-3 rounded-lg border border-orange-500/60 text-orange-400 font-mono text-sm hover-elevate disabled:opacity-50"
+                      className="px-4 py-2 rounded-lg border border-orange-500/60 text-orange-400 font-mono text-xs hover-elevate disabled:opacity-50"
                       data-testid="button-save-onchain"
                     >
-                      {`💾 Save on-chain (${CHAIN.label})`}
+                      💾 Save on-chain
                     </button>
-                    <div className="mt-2 text-center text-[10px] font-mono text-zinc-500">
-                      Permanently anchor this roast to {CHAIN.label}.
-                    </div>
-                  </>
+                  </div>
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* Shareable card */}
-            <div className="space-y-3">
-              <div ref={cardRef} className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-black border-2 border-green-500/40" style={{ minHeight: 460 }}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="font-black text-lg">
-                    <span className="text-orange-400">Roast</span><span className="text-green-400">Launch</span>
-                  </div>
-                  <div className={`px-2 py-0.5 rounded text-[10px] font-mono ${verdictColor(roast.verdict)}`}>{roast.verdict}</div>
-                </div>
-                <div className="text-zinc-300 text-sm mb-2">"{roast.tokenIdea}"</div>
-                {roast.ticker && <div className="font-mono text-xs text-orange-400 mb-3">${roast.ticker}</div>}
-                <div className={`text-center text-6xl font-black font-mono my-4 ${scoreColor(roast.score)}`}>
-                  {roast.score}<span className="text-2xl text-zinc-600">/100</span>
-                </div>
-                <div className="text-zinc-300 text-xs italic text-center mb-2">"{roast.summary}"</div>
-                <div className="text-center text-[11px] font-mono text-red-400 mb-3">☠️ Rug Probability: {roast.rugProbability}%</div>
-                <div className="space-y-2 text-xs">
-                  <div className="border-l-2 border-green-500 pl-2 text-zinc-300">
-                    <span className="text-green-400 font-mono">🐂 BULL: </span>{roast.bull.slice(0, 110)}…
-                  </div>
-                  <div className="border-l-2 border-red-500 pl-2 text-zinc-300">
-                    <span className="text-red-400 font-mono">🚨 RUG: </span>{roast.rug.slice(0, 110)}…
-                  </div>
-                </div>
-                <div className="mt-4 flex justify-between text-[10px] font-mono text-zinc-500">
-                  <span>{roast.txHash ? `BSC: ${roast.txHash.slice(-8)}` : "off-chain"}</span>
-                  <span>roastlaunch · {new Date(roast.timestamp).toLocaleDateString()}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={downloadCard} className="py-3 rounded-lg border border-green-500/60 text-green-400 font-mono text-sm hover-elevate">⬇ Download Card</button>
-                <button onClick={shareOnX} className="py-3 rounded-lg bg-white text-black font-mono text-sm hover:bg-zinc-200">𝕏 Share on X</button>
-              </div>
-            </div>
           </div>
         )}
-
-        {roast && <Playbook plan={roast.sevenDayPlan} />}
-        {roast && <MemeCards tokenName={roast.tokenName || roast.ticker || "YOUR COIN"} memeTexts={roast.memeTexts} />}
-        {roast && <Voting roastId={roast.id} />}
 
         <TrendingFeed />
 
