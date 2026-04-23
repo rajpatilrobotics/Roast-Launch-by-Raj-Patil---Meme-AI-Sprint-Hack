@@ -188,16 +188,20 @@ router.get("/friends/requests/:name", async (req, res) => {
 router.get("/friends/search", async (req, res) => {
   const q = clean(req.query.q);
   const exclude = clean(req.query.exclude);
-  if (!q) return res.json({ users: [] });
+  const limit = Math.min(Number(req.query.limit) || 100, 200);
+
+  const conditions = [
+    q ? ilike(usersTable.name, `%${q}%`) : undefined,
+    exclude ? ne(usersTable.name, exclude) : undefined,
+  ].filter(Boolean) as any[];
 
   const rows = await db
-    .select({ name: usersTable.name })
+    .select({ name: usersTable.name, createdAt: usersTable.createdAt })
     .from(usersTable)
-    .where(and(
-      ilike(usersTable.name, `%${q}%`),
-      exclude ? ne(usersTable.name, exclude) : (undefined as any),
-    ))
-    .limit(20);
+    .where(conditions.length ? and(...conditions) : (undefined as any))
+    .orderBy(desc(usersTable.createdAt))
+    .limit(limit);
+
   res.json({ users: rows.map((r) => r.name) });
 });
 

@@ -52,22 +52,22 @@ export default function Friends() {
   }, [userName]);
 
   useEffect(() => {
-    if (!q.trim() || !userName) { setResults([]); return; }
+    if (!userName || tab !== "find") return;
     const t = setTimeout(async () => {
-      const r = await fetch(`${API}/friends/search?q=${encodeURIComponent(q)}&exclude=${encodeURIComponent(userName)}`).then((x) => x.json());
-      setResults(r.users || []);
-      // fetch each status
+      const r = await fetch(`${API}/friends/search?q=${encodeURIComponent(q)}&exclude=${encodeURIComponent(userName)}&limit=100`).then((x) => x.json());
+      const users: string[] = r.users || [];
+      setResults(users);
       const map: Record<string, string> = {};
       await Promise.all(
-        (r.users || []).map(async (n: string) => {
+        users.map(async (n: string) => {
           const s = await fetch(`${API}/friends/status?userName=${encodeURIComponent(userName)}&otherUser=${encodeURIComponent(n)}`).then((x) => x.json());
           map[n] = s.status;
         }),
       );
       setStatusMap(map);
-    }, 300);
+    }, q.trim() ? 250 : 0);
     return () => clearTimeout(t);
-  }, [q, userName]);
+  }, [q, userName, tab]);
 
   async function sendReq(other: string) {
     if (!userName) return;
@@ -294,9 +294,15 @@ export default function Friends() {
             className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3 font-mono text-sm focus:outline-none focus:border-pink-500"
             autoFocus
           />
-          <div className="mt-3 space-y-2">
-            {q.trim() && results.length === 0 && (
-              <p className="text-zinc-600 text-xs font-mono text-center py-6">No users matching "{q}"</p>
+          <div className="text-[11px] font-mono text-zinc-500 mt-3 mb-2 flex items-center justify-between">
+            <span>{q.trim() ? `Results for "${q}"` : "👥 All users on RoastLaunch"}</span>
+            <span className="text-zinc-600">{results.length}</span>
+          </div>
+          <div className="space-y-2">
+            {results.length === 0 && (
+              <p className="text-zinc-600 text-xs font-mono text-center py-6">
+                {q.trim() ? `No users matching "${q}"` : "No users yet."}
+              </p>
             )}
             {results.map((u) => {
               const status = statusMap[u] || "none";
