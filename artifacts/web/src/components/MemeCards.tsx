@@ -1,26 +1,66 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 
 export default function MemeCards({ tokenName, memeTexts }: { tokenName: string; memeTexts: string[] }) {
   const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [busyIdx, setBusyIdx] = useState<number | null>(null);
 
   if (!memeTexts || memeTexts.length === 0) return null;
 
-  async function download(i: number) {
+  async function renderPng(i: number): Promise<string | null> {
     const node = cardRefs.current[i];
-    if (!node) return;
+    if (!node) return null;
+    return await toPng(node, {
+      backgroundColor: "#000000",
+      pixelRatio: 2,
+      cacheBust: true,
+    });
+  }
+
+  async function download(i: number) {
+    setBusyIdx(i);
     try {
-      const dataUrl = await toPng(node, {
-        backgroundColor: "#000000",
-        pixelRatio: 2,
-        cacheBust: true,
-      });
+      const dataUrl = await renderPng(i);
+      if (!dataUrl) return;
       const a = document.createElement("a");
       a.download = `roastlaunch-meme-${i + 1}.png`;
       a.href = dataUrl;
       a.click();
     } catch (e) {
       console.error("download failed:", e);
+    } finally {
+      setBusyIdx(null);
+    }
+  }
+
+  async function copyToClipboard(i: number) {
+    setBusyIdx(i);
+    try {
+      const dataUrl = await renderPng(i);
+      if (!dataUrl) return;
+      const blob = await (await fetch(dataUrl)).blob();
+      // @ts-ignore — ClipboardItem is widely supported in modern browsers
+      if (navigator.clipboard && typeof window.ClipboardItem !== "undefined") {
+        // @ts-ignore
+        await navigator.clipboard.write([new window.ClipboardItem({ "image/png": blob })]);
+        setCopiedIdx(i);
+        setTimeout(() => setCopiedIdx((c) => (c === i ? null : c)), 1800);
+      } else {
+        // Fallback — copy the caption text
+        await navigator.clipboard.writeText(`${tokenName}: ${memeTexts[i]}`);
+        setCopiedIdx(i);
+        setTimeout(() => setCopiedIdx((c) => (c === i ? null : c)), 1800);
+      }
+    } catch (e) {
+      console.error("copy failed:", e);
+      try {
+        await navigator.clipboard.writeText(`${tokenName}: ${memeTexts[i]}`);
+        setCopiedIdx(i);
+        setTimeout(() => setCopiedIdx((c) => (c === i ? null : c)), 1800);
+      } catch {}
+    } finally {
+      setBusyIdx(null);
     }
   }
 
@@ -52,17 +92,29 @@ export default function MemeCards({ tokenName, memeTexts }: { tokenName: string;
                 roastlaunch · BNB Chain
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-3 gap-2 mt-2">
               <button
                 onClick={() => download(i)}
-                className="py-2 rounded border border-green-500/50 text-green-400 font-mono text-xs hover-elevate"
+                disabled={busyIdx === i}
+                className="py-2 rounded border border-green-500/50 text-green-400 font-mono text-xs hover-elevate disabled:opacity-50"
                 title="Download card as PNG"
+                data-testid={`button-meme-download-${i}`}
               >
-                ⬇ Download
+                ⬇ PNG
+              </button>
+              <button
+                onClick={() => copyToClipboard(i)}
+                disabled={busyIdx === i}
+                className={`py-2 rounded border font-mono text-xs hover-elevate disabled:opacity-50 transition-colors ${copiedIdx === i ? "border-green-500 bg-green-500/10 text-green-300" : "border-purple-500/50 text-purple-300"}`}
+                title="Copy image to clipboard — paste anywhere"
+                data-testid={`button-meme-copy-${i}`}
+              >
+                {copiedIdx === i ? "✓ Copied" : "📋 Copy"}
               </button>
               <button
                 onClick={() => shareX(i)}
                 className="py-2 rounded bg-white text-black font-mono text-xs hover:bg-zinc-200"
+                data-testid={`button-meme-share-${i}`}
               >
                 𝕏 Share
               </button>
