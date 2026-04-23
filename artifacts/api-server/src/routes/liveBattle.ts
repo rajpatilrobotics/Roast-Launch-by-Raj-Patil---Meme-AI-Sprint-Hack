@@ -159,6 +159,52 @@ router.get("/live-battle/history", async (req, res) => {
   }
 });
 
+router.get("/live-battle/leaderboard", async (_req, res) => {
+  try {
+    const rows = await db
+      .select()
+      .from(liveBattleRoomsTable)
+      .where(eq(liveBattleRoomsTable.status, "done"))
+      .orderBy(desc(liveBattleRoomsTable.createdAt))
+      .limit(500);
+    const stats = new Map<
+      string,
+      { userName: string; wins: number; losses: number; battles: number; bestScore: number; lastBattle: string | null }
+    >();
+    for (const r of rows) {
+      const result: any = r.result || {};
+      const winner = result.winnerUser as string | undefined;
+      const loser = result.loserUser as string | undefined;
+      const winnerScore = Number(result?.winnerRoast?.score || 0);
+      const loserScore = Number(result?.loserRoast?.score || 0);
+      const ts = r.createdAt ? new Date(r.createdAt as any).toISOString() : null;
+      if (winner) {
+        const s = stats.get(winner) || { userName: winner, wins: 0, losses: 0, battles: 0, bestScore: 0, lastBattle: null };
+        s.wins += 1;
+        s.battles += 1;
+        if (winnerScore > s.bestScore) s.bestScore = winnerScore;
+        if (!s.lastBattle || (ts && ts > s.lastBattle)) s.lastBattle = ts;
+        stats.set(winner, s);
+      }
+      if (loser) {
+        const s = stats.get(loser) || { userName: loser, wins: 0, losses: 0, battles: 0, bestScore: 0, lastBattle: null };
+        s.losses += 1;
+        s.battles += 1;
+        if (loserScore > s.bestScore) s.bestScore = loserScore;
+        if (!s.lastBattle || (ts && ts > s.lastBattle)) s.lastBattle = ts;
+        stats.set(loser, s);
+      }
+    }
+    const leaderboard = [...stats.values()]
+      .map((s) => ({ ...s, winRate: s.battles ? Math.round((s.wins / s.battles) * 100) : 0 }))
+      .sort((a, b) => b.wins - a.wins || b.winRate - a.winRate || b.bestScore - a.bestScore)
+      .slice(0, 20);
+    res.json({ leaderboard, totalBattles: rows.length });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || "leaderboard fetch failed" });
+  }
+});
+
 router.post("/live-battle/submit", async (req, res) => {
   const roomId = Number(req.body?.roomId);
   const userName = String(req.body?.userName || "").trim();

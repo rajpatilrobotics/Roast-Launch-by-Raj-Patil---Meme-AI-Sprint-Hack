@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { API, type Roast, scoreColor, verdictColor } from "../lib/api";
 import { useUser } from "../context/UserContext";
+import LiveBattleHistory from "../components/LiveBattleHistory";
 
 type OnlineUser = { userName: string; lastSeen: string };
 
@@ -190,14 +191,17 @@ export default function Battle() {
         </div>
 
         {mode === "live" && (
-          <LivePanel
-            userName={userName}
-            online={online}
-            inviting={inviting}
-            waitingRoomId={waitingRoomId}
-            onInvite={inviteUser}
-            onCancelWait={() => { setInviting(null); setWaitingRoomId(null); }}
-          />
+          <>
+            <LivePanel
+              userName={userName}
+              online={online}
+              inviting={inviting}
+              waitingRoomId={waitingRoomId}
+              onInvite={inviteUser}
+              onCancelWait={() => { setInviting(null); setWaitingRoomId(null); }}
+            />
+            <LiveBattleHistory currentUser={userName} />
+          </>
         )}
 
         {mode === "solo" && <>
