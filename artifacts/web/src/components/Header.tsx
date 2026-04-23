@@ -62,11 +62,13 @@ export default function Header({ isIframed }: { isIframed: boolean }) {
     <header className="border-b border-zinc-900 bg-black/80 backdrop-blur sticky top-0 z-30">
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
         <Link href="/" className="flex items-center gap-2">
-          <img
-            src={`${import.meta.env.BASE_URL}logo.png`}
-            alt="RoastLaunch"
-            className="w-8 h-8 md:w-9 md:h-9 rounded-lg shadow-md shadow-orange-500/20"
-          />
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg overflow-hidden shadow-md shadow-orange-500/20">
+            <img
+              src={`${import.meta.env.BASE_URL}logo.png`}
+              alt="RoastLaunch"
+              className="w-full h-full object-cover scale-[1.08]"
+            />
+          </div>
           <div className="text-xl md:text-2xl font-black tracking-tight neon-pulse">
             <span className="text-orange-400">Roast</span>
             <span className="text-green-400">Launch</span>

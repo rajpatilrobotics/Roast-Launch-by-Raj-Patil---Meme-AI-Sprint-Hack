@@ -42,11 +42,13 @@ export default function Hero() {
       </div>
       <div className="relative z-10 max-w-5xl mx-auto px-4 md:px-6 py-12 md:py-20 text-center">
         <div className="flex justify-center mb-6">
-          <img
-            src={`${import.meta.env.BASE_URL}logo.png`}
-            alt="RoastLaunch"
-            className="w-56 h-56 md:w-72 md:h-72 rounded-[2.25rem] object-cover logo-pulse drop-shadow-[0_0_40px_rgba(249,115,22,0.45)]"
-          />
+          <div className="w-56 h-56 md:w-72 md:h-72 rounded-[2.25rem] overflow-hidden logo-pulse drop-shadow-[0_0_40px_rgba(249,115,22,0.45)]">
+            <img
+              src={`${import.meta.env.BASE_URL}logo.png`}
+              alt="RoastLaunch"
+              className="w-full h-full object-cover scale-[1.08]"
+            />
+          </div>
         </div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/40 bg-black/60 text-orange-300 text-[11px] font-mono mb-5">
           🔥 {count} coins roasted today · live on BNB
