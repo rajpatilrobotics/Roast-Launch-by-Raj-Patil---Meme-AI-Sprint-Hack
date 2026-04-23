@@ -14,6 +14,8 @@ router.get("/activity", async (_req, res) => {
       score: activityHistoryTable.score,
       verdict: activityHistoryTable.verdict,
       createdAt: activityHistoryTable.createdAt,
+      remixOfId: activityHistoryTable.remixOfId,
+      remixOfUser: activityHistoryTable.remixOfUser,
     })
     .from(activityHistoryTable)
     .orderBy(desc(activityHistoryTable.createdAt))

@@ -13,6 +13,7 @@ import watchlistRouter from "./watchlist";
 import profileRouter from "./profile";
 import battleRequestsRouter from "./battleRequests";
 import recapRouter from "./recap";
+import communityFeaturesRouter from "./communityFeatures";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(watchlistRouter);
 router.use(profileRouter);
 router.use(battleRequestsRouter);
 router.use(recapRouter);
+router.use(communityFeaturesRouter);
 
 export default router;

@@ -19,6 +19,8 @@ export const activityHistoryTable = pgTable("activity_history", {
   score: integer("score"),
   verdict: text("verdict"),
   result: jsonb("result").notNull(),
+  remixOfId: integer("remix_of_id"),
+  remixOfUser: text("remix_of_user"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 export const insertActivitySchema = createInsertSchema(activityHistoryTable).omit({ id: true, createdAt: true });
@@ -62,6 +64,30 @@ export const watchlistTable = pgTable("watchlist", {
   coinIdea: text("coin_idea").notNull(),
   coinName: text("coin_name"),
   ticker: text("ticker"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const dailyBattlesTable = pgTable("daily_battles", {
+  id: serial("id").primaryKey(),
+  date: text("date").notNull().unique(),
+  coinAId: integer("coin_a_id").notNull(),
+  coinBId: integer("coin_b_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const dailyBattleVotesTable = pgTable("daily_battle_votes", {
+  id: serial("id").primaryKey(),
+  battleId: integer("battle_id").notNull(),
+  userName: text("user_name").notNull(),
+  side: text("side").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const dailyChallengeCompletionsTable = pgTable("daily_challenge_completions", {
+  id: serial("id").primaryKey(),
+  date: text("date").notNull(),
+  userName: text("user_name").notNull(),
+  activityId: integer("activity_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

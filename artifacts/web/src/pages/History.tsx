@@ -1,10 +1,22 @@
 import { useEffect, useState } from "react";
-import { API } from "../lib/api";
+import { useLocation } from "wouter";
+import { API, scoreColor } from "../lib/api";
 import { useUser } from "../context/UserContext";
 import ActivityCard from "../components/community/ActivityCard";
 import ChatPanel from "../components/community/ChatPanel";
 
-type ActivityItem = { id: number; userName: string; type: string; coinName: string; score: number | null; verdict: string | null; createdAt: string };
+type DailyChallenge = { date: string; narrative: string; prompt: string; emoji: string; reward: string; completed: boolean; participants: number };
+type RoastOfWeek = { id: number; userName: string; coinName: string; score: number | null; verdict: string | null; votes: number };
+type DailyBattle = {
+  id: number;
+  coinA: { id: number; userName: string; coinName: string; score: number | null; verdict: string | null } | null;
+  coinB: { id: number; userName: string; coinName: string; score: number | null; verdict: string | null } | null;
+  votesA: number;
+  votesB: number;
+  myVote: "A" | "B" | null;
+};
+
+type ActivityItem = { id: number; userName: string; type: string; coinName: string; score: number | null; verdict: string | null; createdAt: string; remixOfId?: number | null; remixOfUser?: string | null };
 type Summary = { reactions: Record<string, number>; myReactions: string[]; voteTotal: number; myVote: number; commentCount: number };
 type LeaderboardUser = { userName: string; total: number; avgScore: number; roastCount: number; battleCount: number };
 type Recap = { empty: boolean; totalActivity: number; topUser: { userName: string; count: number } | null; bestCoin: { userName: string; coinName: string; score: number; verdict: string } | null; mostLoved: any | null };
@@ -14,6 +26,7 @@ type SortMode = "newest" | "top" | "discussed";
 
 export default function History() {
   const { userName } = useUser();
+  const [, navigate] = useLocation();
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [summary, setSummary] = useState<Record<number, Summary>>({});
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
@@ -22,6 +35,52 @@ export default function History() {
   const [filter, setFilter] = useState<"all" | "mine">("all");
   const [sort, setSort] = useState<SortMode>("newest");
   const [chatOpen, setChatOpen] = useState(false);
+
+  const [challenge, setChallenge] = useState<DailyChallenge | null>(null);
+  const [rotw, setRotw] = useState<RoastOfWeek | null>(null);
+  const [battle, setBattle] = useState<DailyBattle | null>(null);
+  const [battleVoting, setBattleVoting] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API}/community/daily-challenge?userName=${encodeURIComponent(userName || "")}`)
+      .then((r) => r.json()).then(setChallenge).catch(() => {});
+    fetch(`${API}/community/roast-of-the-week`).then((r) => r.json())
+      .then((d) => setRotw(d.winner || null)).catch(() => {});
+    fetch(`${API}/community/daily-battle?userName=${encodeURIComponent(userName || "")}`)
+      .then((r) => r.json()).then((d) => setBattle(d.battle || null)).catch(() => {});
+  }, [userName]);
+
+  function takeChallenge() {
+    if (!challenge) return;
+    sessionStorage.setItem("roastlaunch:prefill", JSON.stringify({
+      idea: `A meme coin in the ${challenge.narrative} narrative`,
+      name: "",
+      ticker: "",
+    }));
+    navigate("/");
+  }
+
+  async function voteBattle(side: "A" | "B") {
+    if (!battle || !userName || battleVoting) return;
+    setBattleVoting(true);
+    const prevSide = battle.myVote;
+    const newBattle = { ...battle, myVote: side } as DailyBattle;
+    if (prevSide !== side) {
+      if (side === "A") {
+        newBattle.votesA += 1;
+        if (prevSide === "B") newBattle.votesB = Math.max(0, newBattle.votesB - 1);
+      } else {
+        newBattle.votesB += 1;
+        if (prevSide === "A") newBattle.votesA = Math.max(0, newBattle.votesA - 1);
+      }
+    }
+    setBattle(newBattle);
+    await fetch(`${API}/community/daily-battle/vote`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ battleId: battle.id, userName, side }),
+    }).catch(() => {});
+    setBattleVoting(false);
+  }
 
   useEffect(() => {
     Promise.all([
@@ -67,6 +126,96 @@ export default function History() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
+
+      {/* Daily Challenge */}
+      {challenge && (
+        <div className="mb-6 rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-500/10 to-pink-500/5 p-4 sm:p-5 flex items-center gap-4 flex-wrap">
+          <div className="text-4xl shrink-0">{challenge.emoji}</div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-mono uppercase text-purple-300 bg-purple-500/15 border border-purple-500/40 rounded-full px-2 py-0.5">Daily Challenge</span>
+              <span className="text-[10px] font-mono text-zinc-500">{challenge.participants} {challenge.participants === 1 ? "player" : "players"} today</span>
+              {challenge.completed && <span className="text-[10px] font-mono text-green-400">✓ Completed</span>}
+            </div>
+            <p className="text-zinc-100 text-sm font-bold">{challenge.prompt}</p>
+            <p className="text-purple-300/70 text-[11px] font-mono mt-0.5">Reward: {challenge.reward}</p>
+          </div>
+          <button onClick={takeChallenge}
+            className="px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/50 text-purple-200 text-xs font-mono uppercase tracking-wider hover:bg-purple-500/30 shrink-0">
+            {challenge.completed ? "Try Again" : "Accept ▸"}
+          </button>
+        </div>
+      )}
+
+      {/* Daily Battle */}
+      {battle && battle.coinA && battle.coinB && (
+        <div className="mb-6 rounded-2xl border border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 via-orange-500/5 to-red-500/5 p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-mono uppercase text-yellow-300 bg-yellow-500/15 border border-yellow-500/40 rounded-full px-2 py-0.5">⚔️ Daily Battle</span>
+            <span className="text-[10px] font-mono text-zinc-500">Today's top 2 — vote your champion</span>
+          </div>
+          {(() => {
+            const total = battle.votesA + battle.votesB;
+            const pctA = total > 0 ? Math.round((battle.votesA / total) * 100) : 50;
+            const pctB = 100 - pctA;
+            return (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { side: "A" as const, coin: battle.coinA, votes: battle.votesA, pct: pctA, color: "orange" },
+                    { side: "B" as const, coin: battle.coinB, votes: battle.votesB, pct: pctB, color: "purple" },
+                  ]).map(({ side, coin, votes, pct, color }) => {
+                    const mine = battle.myVote === side;
+                    const colorClasses = color === "orange"
+                      ? (mine ? "border-orange-500/70 bg-orange-500/15 hover:border-orange-500/80" : "border-orange-500/30 bg-orange-500/5 hover:border-orange-500/50")
+                      : (mine ? "border-purple-500/70 bg-purple-500/15 hover:border-purple-500/80" : "border-purple-500/30 bg-purple-500/5 hover:border-purple-500/50");
+                    return (
+                      <button key={side} onClick={() => voteBattle(side)} disabled={!userName || battleVoting}
+                        className={`text-left rounded-xl border p-3 transition-colors ${colorClasses} disabled:opacity-60`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="font-mono text-[10px] text-zinc-500 truncate">@{coin!.userName}</div>
+                          {coin!.score !== null && <div className={`text-xs font-black ${scoreColor(coin!.score!)}`}>{coin!.score}</div>}
+                        </div>
+                        <div className="text-zinc-100 text-sm font-bold truncate mt-0.5">{coin!.coinName}</div>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className={`text-[10px] font-mono ${color === "orange" ? "text-orange-300" : "text-purple-300"}`}>
+                            {votes} {votes === 1 ? "vote" : "votes"} · {pct}%
+                          </span>
+                          {mine && <span className="text-[10px] font-mono text-green-400">✓ Your pick</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 h-1.5 rounded-full overflow-hidden flex bg-zinc-900">
+                  <div className="bg-orange-500/60 transition-all" style={{ width: `${pctA}%` }} />
+                  <div className="bg-purple-500/60 transition-all" style={{ width: `${pctB}%` }} />
+                </div>
+              </>
+            );
+          })()}
+          {!userName && <p className="text-zinc-600 text-[10px] font-mono mt-2">Set your handle to vote.</p>}
+        </div>
+      )}
+
+      {/* Roast of the Week */}
+      {rotw && (
+        <div className="mb-6 rounded-2xl border border-yellow-400/40 bg-gradient-to-r from-yellow-500/10 to-amber-500/5 p-4 sm:p-5 flex items-center gap-4">
+          <div className="text-4xl shrink-0">🏆</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-mono uppercase text-yellow-300 mb-1">Roast of the Week</div>
+            <div className="text-zinc-100 text-sm font-bold truncate">"{rotw.coinName}"</div>
+            <div className="text-zinc-500 text-[11px] font-mono mt-0.5">
+              by <a href={`/u/${rotw.userName}`} className="text-orange-400 hover:underline">@{rotw.userName}</a>
+              {rotw.votes > 0 && <> · ▲ {rotw.votes} community votes</>}
+              {rotw.verdict && <> · {rotw.verdict}</>}
+            </div>
+          </div>
+          {rotw.score !== null && (
+            <div className={`text-3xl font-black shrink-0 ${scoreColor(rotw.score!)}`}>{rotw.score}</div>
+          )}
+        </div>
+      )}
 
       {/* Weekly recap */}
       {recap && !recap.empty && (

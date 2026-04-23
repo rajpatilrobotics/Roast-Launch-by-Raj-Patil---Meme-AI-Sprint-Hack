@@ -22,6 +22,8 @@ type ActivityItem = {
   score: number | null;
   verdict: string | null;
   createdAt: string;
+  remixOfId?: number | null;
+  remixOfUser?: string | null;
 };
 
 function timeAgo(d: string) {
@@ -58,6 +60,10 @@ export default function ActivityCard({
   const [sendingBattle, setSendingBattle] = useState(false);
 
   const [savedToWatchlist, setSavedToWatchlist] = useState(false);
+
+  const [remixOpen, setRemixOpen] = useState(false);
+  const [remixTwist, setRemixTwist] = useState("");
+  const [remixing, setRemixing] = useState(false);
 
   async function toggleReaction(emoji: string) {
     if (!userName) return;
@@ -121,6 +127,37 @@ export default function ActivityCard({
       onSummaryChange(item.id, { commentCount: summary.commentCount + 1 });
       setCommentInput("");
     } catch {} finally { setSendingComment(false); }
+  }
+
+  async function submitRemix() {
+    const twist = remixTwist.trim();
+    if (!twist || remixing || !userName) return;
+    setRemixing(true);
+    try {
+      const r = await fetch(`${API}/roast/remix`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parentId: item.id, twist, userName }),
+      });
+      const result = await r.json();
+      if (result && !result.error) {
+        sessionStorage.setItem("roastlaunch:remixResult", JSON.stringify(result));
+        navigate("/");
+      }
+    } catch {} finally {
+      setRemixing(false);
+      setRemixOpen(false);
+      setRemixTwist("");
+    }
+  }
+
+  function shareToX() {
+    const verdict = item.verdict ? `${item.verdict} ` : "";
+    const score = item.score !== null ? `Score: ${item.score}/100. ` : "";
+    const text = `🔥 Just got roasted on RoastLaunch:\n"${item.coinName}"\n${verdict}${score}\nThink you can do better? 👀`;
+    const url = typeof window !== "undefined" ? window.location.origin : "https://roastlaunch.app";
+    const tweet = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=RoastLaunch,FourMeme,memecoin`;
+    window.open(tweet, "_blank", "noopener,noreferrer");
   }
 
   function stealIdea() {
@@ -230,7 +267,43 @@ export default function ActivityCard({
             ⚔️ Battle Request
           </button>
         )}
+
+        <button onClick={() => setRemixOpen((p) => !p)} className={`text-[11px] font-mono flex items-center gap-1 transition-colors ${remixOpen ? "text-purple-400" : "text-zinc-400 hover:text-purple-400"}`}>
+          🔀 Remix
+        </button>
+
+        <button onClick={shareToX} className="text-[11px] font-mono text-zinc-400 hover:text-sky-400 flex items-center gap-1 ml-auto">
+          𝕏 Share
+        </button>
       </div>
+
+      {item.remixOfUser && (
+        <div className="px-4 -mt-1 pb-2">
+          <Link href={`/u/${item.remixOfUser}`} className="inline-block text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 hover:bg-purple-500/20">
+            🔀 Remix of @{item.remixOfUser}
+          </Link>
+        </div>
+      )}
+
+      {remixOpen && (
+        <div className="px-4 pb-3 border-t border-zinc-800/60 pt-3 space-y-2">
+          <p className="text-zinc-500 text-[11px] font-mono">Add your twist to <span className="text-purple-300">{item.coinName}</span>:</p>
+          <input
+            value={remixTwist}
+            onChange={(e) => setRemixTwist(e.target.value)}
+            placeholder="e.g. set in space, with cats, in 2099..."
+            maxLength={80}
+            className="w-full bg-black border border-zinc-700 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-purple-500"
+          />
+          <div className="flex gap-2">
+            <button onClick={submitRemix} disabled={!remixTwist.trim() || remixing}
+              className="flex-1 py-1.5 rounded-lg bg-purple-500/20 border border-purple-500/50 text-purple-300 text-xs font-mono hover:bg-purple-500/30 disabled:opacity-40">
+              {remixing ? "Remixing..." : "🔀 Generate Remix"}
+            </button>
+            <button onClick={() => setRemixOpen(false)} className="px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-500 text-xs">Cancel</button>
+          </div>
+        </div>
+      )}
 
       {/* Battle request mini-form */}
       {battleOpen && !isOwn && (

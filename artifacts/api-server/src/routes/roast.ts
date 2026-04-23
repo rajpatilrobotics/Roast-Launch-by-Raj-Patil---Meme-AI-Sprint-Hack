@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { textGen } from "../lib/textGen";
 import { db, activityHistoryTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -110,8 +111,10 @@ export async function runRoast(input: {
   tokenName?: string;
   ticker?: string;
   userName?: string;
+  remixOfId?: number;
+  remixOfUser?: string;
 }): Promise<RoastResult> {
-  const { tokenIdea, tokenName, ticker, userName } = input;
+  const { tokenIdea, tokenName, ticker, userName, remixOfId, remixOfUser } = input;
   const ctx = `Idea: "${tokenIdea}"${tokenName ? ` | Name: ${tokenName}` : ""}${
     ticker ? ` | Ticker: ${ticker}` : ""
   }`;
@@ -261,6 +264,10 @@ Return ONLY this JSON:
       score: result.score,
       verdict: result.verdict,
       result: result as any,
+      remixOfId: remixOfId || null,
+      remixOfUser: remixOfUser || null,
+    } as any).then((r: any) => {
+      try { (result as any).activityId = r?.[0]?.id; } catch {}
     }).catch(() => {});
   }
 
@@ -285,12 +292,36 @@ router.get("/history", (_req, res) => {
 });
 
 router.post("/roast", async (req, res) => {
-  const { tokenIdea, tokenName, ticker, userName } = req.body || {};
+  const { tokenIdea, tokenName, ticker, userName, remixOfId, remixOfUser } = req.body || {};
   if (!tokenIdea || typeof tokenIdea !== "string") {
     return res.status(400).json({ error: "tokenIdea required" });
   }
-  const result = await runRoast({ tokenIdea, tokenName, ticker, userName });
+  const result = await runRoast({ tokenIdea, tokenName, ticker, userName, remixOfId, remixOfUser });
   res.json(result);
+});
+
+router.post("/roast/remix", async (req, res) => {
+  const { parentId, twist, userName } = req.body || {};
+  if (!parentId || !twist) return res.status(400).json({ error: "parentId and twist required" });
+  try {
+    const [parent] = await db.select().from(activityHistoryTable).where(eq(activityHistoryTable.id, Number(parentId)));
+    if (!parent) return res.status(404).json({ error: "parent not found" });
+    const parentResult: any = parent.result || {};
+    const baseIdea = parentResult.idea || parentResult.tokenIdea || parent.coinName;
+    const newIdea = `${baseIdea} — but ${twist}`;
+    const newName = `${parent.coinName} (${twist.slice(0, 24)})`;
+    const result = await runRoast({
+      tokenIdea: newIdea,
+      tokenName: newName,
+      ticker: parentResult.ticker,
+      userName,
+      remixOfId: parent.id,
+      remixOfUser: parent.userName,
+    });
+    res.json(result);
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || "remix failed" });
+  }
 });
 
 router.post("/history/txhash", (req, res) => {

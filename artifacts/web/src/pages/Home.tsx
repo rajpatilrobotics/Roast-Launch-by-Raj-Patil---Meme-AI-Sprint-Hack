@@ -161,6 +161,15 @@ export default function Home() {
           }, 100);
         }
       }
+      const remixRaw = sessionStorage.getItem("roastlaunch:remixResult");
+      if (remixRaw) {
+        sessionStorage.removeItem("roastlaunch:remixResult");
+        const r = JSON.parse(remixRaw);
+        if (r && r.score !== undefined) {
+          setRoast(r as Roast);
+          setTimeout(() => window.scrollTo({ top: document.body.scrollHeight * 0.4, behavior: "smooth" }), 200);
+        }
+      }
     } catch {
       // ignore
     }
