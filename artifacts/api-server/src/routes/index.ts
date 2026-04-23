@@ -15,6 +15,8 @@ import battleRequestsRouter from "./battleRequests";
 import recapRouter from "./recap";
 import communityFeaturesRouter from "./communityFeatures";
 import liveBattleRouter from "./liveBattle";
+import friendsRouter from "./friends";
+import dmRouter from "./dm";
 
 const router: IRouter = Router();
 
@@ -34,5 +36,7 @@ router.use(battleRequestsRouter);
 router.use(recapRouter);
 router.use(communityFeaturesRouter);
 router.use(liveBattleRouter);
+router.use(friendsRouter);
+router.use(dmRouter);
 
 export default router;

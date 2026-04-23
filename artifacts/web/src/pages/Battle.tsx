@@ -283,6 +283,22 @@ function LivePanel({ userName, online, inviting, waitingRoomId, onInvite, onCanc
   onInvite: (u: string) => void;
   onCancelWait: () => void;
 }) {
+  const [friends, setFriends] = useState<{ userName: string; online: boolean }[]>([]);
+  useEffect(() => {
+    if (!userName) return;
+    let alive = true;
+    const tick = async () => {
+      try {
+        const r = await fetch(`${API}/friends/list/${encodeURIComponent(userName)}`);
+        const d = await r.json();
+        if (alive) setFriends(d.friends || []);
+      } catch {}
+    };
+    tick();
+    const id = setInterval(tick, 15_000);
+    return () => { alive = false; clearInterval(id); };
+  }, [userName]);
+
   if (!userName) {
     return <div className="rounded-2xl border border-zinc-800 bg-black/40 p-8 text-center text-zinc-400 font-mono">Set your handle to enter the live arena.</div>;
   }
@@ -304,6 +320,32 @@ function LivePanel({ userName, online, inviting, waitingRoomId, onInvite, onCanc
         <span className="text-zinc-500 text-xs font-mono ml-auto">{online.length} online now</span>
       </div>
       <p className="text-zinc-400 text-xs font-mono mb-4">Pick an opponent — both write a coin in 60s, AI judges instantly. Winner gets bragging rights + a feed post.</p>
+
+      {friends.length > 0 && (
+        <div className="mb-5 rounded-xl border border-pink-500/30 bg-pink-500/5 p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-pink-300 font-mono text-[11px] uppercase">👯 Your Friends</span>
+            <span className="text-zinc-600 text-[10px] font-mono ml-auto">
+              {friends.filter((f) => f.online).length}/{friends.length} online
+            </span>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {[...friends].sort((a, b) => Number(b.online) - Number(a.online)).slice(0, 9).map((f) => (
+              <div key={f.userName} className={`flex items-center gap-2 rounded-lg border px-3 py-2 transition-colors ${f.online ? "border-pink-500/40 bg-black/40 hover:border-pink-500/60" : "border-zinc-800 bg-black/20"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${f.online ? "bg-green-500 animate-pulse" : "bg-zinc-600"}`} />
+                <span className={`font-mono text-sm truncate flex-1 ${f.online ? "text-zinc-100" : "text-zinc-500"}`}>@{f.userName}</span>
+                <button onClick={() => onInvite(f.userName)} disabled={!!inviting || !f.online}
+                  title={f.online ? "Challenge to live battle" : "Friend is offline"}
+                  className="px-2.5 py-1 rounded-md bg-pink-500/20 border border-pink-500/50 text-pink-200 text-[11px] font-mono hover:bg-pink-500/30 disabled:opacity-30 shrink-0">
+                  ⚔️
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="text-[11px] font-mono uppercase text-red-300 mb-2">🔴 Online Now</div>
       {online.length === 0 ? (
         <div className="text-center py-10">
           <div className="text-3xl mb-2">👻</div>

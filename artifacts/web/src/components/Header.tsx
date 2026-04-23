@@ -9,6 +9,8 @@ export default function Header({ isIframed }: { isIframed: boolean }) {
   const [todayCount, setTodayCount] = useState<number>(0);
   const [muted, setMutedLocal] = useState<boolean>(isMuted());
   const [pendingBattles, setPendingBattles] = useState(0);
+  const [pendingFriends, setPendingFriends] = useState(0);
+  const [unreadDMs, setUnreadDMs] = useState(0);
   const { userName, clearUser } = useUser();
 
   useEffect(() => subscribeMute(setMutedLocal), []);
@@ -36,6 +38,21 @@ export default function Header({ isIframed }: { isIframed: boolean }) {
         .catch(() => {});
     tick();
     const id = setInterval(tick, 20_000);
+    return () => clearInterval(id);
+  }, [userName]);
+
+  useEffect(() => {
+    if (!userName) return;
+    const tick = () =>
+      fetch(`${API}/friends/summary/${encodeURIComponent(userName)}`)
+        .then((r) => r.json())
+        .then((d) => {
+          setPendingFriends(d.pendingFriendRequests || 0);
+          setUnreadDMs(d.unreadDMs || 0);
+        })
+        .catch(() => {});
+    tick();
+    const id = setInterval(tick, 15_000);
     return () => clearInterval(id);
   }, [userName]);
 
@@ -83,6 +100,7 @@ export default function Header({ isIframed }: { isIframed: boolean }) {
           {navItem("/leaderboard", "Leaderboard")}
           {navItem("/history", "Community")}
           {navItem("/watchlist", "Watchlist")}
+          {userName && navItem("/friends", "Friends", pendingFriends + unreadDMs || undefined)}
         </nav>
 
         <div className="flex items-center gap-2">

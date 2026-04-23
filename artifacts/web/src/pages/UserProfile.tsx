@@ -3,6 +3,8 @@ import { useRoute, useLocation } from "wouter";
 import { API, scoreColor, verdictColor } from "../lib/api";
 import { useUser } from "../context/UserContext";
 import UserLiveStats from "../components/UserLiveStats";
+import FriendButton from "../components/FriendButton";
+import DMPanel from "../components/DMPanel";
 
 type Stats = { total: number; avgScore: number; roastCount: number; battleCount: number; totalVotesReceived: number };
 type ActivityItem = { id: number; userName: string; type: string; coinName: string; score: number | null; verdict: string | null; createdAt: string };
@@ -39,6 +41,15 @@ export default function UserProfile() {
   const [respondingId, setRespondingId] = useState<number | null>(null);
   const [respondCoin, setRespondCoin] = useState({ tokenIdea: "", tokenName: "", ticker: "" });
   const [responding, setResponding] = useState(false);
+
+  const [friendStatus, setFriendStatus] = useState<string>("none");
+  const [dmOpen, setDmOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("dm=1") && friendStatus === "friends") {
+      setDmOpen(true);
+    }
+  }, [friendStatus]);
 
   useEffect(() => {
     if (!name) return;
@@ -116,12 +127,23 @@ export default function UserProfile() {
           </div>
 
           {!isOwn && userName && (
-            <button
-              onClick={() => setRequestOpen((p) => !p)}
-              className="px-4 py-2 rounded-xl bg-yellow-500/20 border border-yellow-500/50 text-yellow-300 font-mono text-sm hover:bg-yellow-500/30 transition-colors"
-            >
-              ⚔️ Request Battle
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <FriendButton userName={userName} otherUser={name} onChange={setFriendStatus} />
+              {friendStatus === "friends" && (
+                <button
+                  onClick={() => setDmOpen(true)}
+                  className="px-3 py-2 rounded-xl bg-blue-500/20 border border-blue-500/50 text-blue-200 font-mono text-xs hover:bg-blue-500/30 transition-colors"
+                >
+                  💬 Message
+                </button>
+              )}
+              <button
+                onClick={() => setRequestOpen((p) => !p)}
+                className="px-3 py-2 rounded-xl bg-yellow-500/20 border border-yellow-500/50 text-yellow-300 font-mono text-xs hover:bg-yellow-500/30 transition-colors"
+              >
+                ⚔️ Battle
+              </button>
+            </div>
           )}
         </div>
 
@@ -146,6 +168,10 @@ export default function UserProfile() {
           </div>
         )}
       </div>
+
+      {dmOpen && userName && !isOwn && (
+        <DMPanel userName={userName} otherUser={name} onClose={() => setDmOpen(false)} />
+      )}
 
       {/* Live battle stats */}
       <UserLiveStats name={name} isOwn={isOwn} />

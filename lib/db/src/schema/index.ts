@@ -118,3 +118,23 @@ export const battleRequestsTable = pgTable("battle_requests", {
   result: jsonb("result"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const friendshipsTable = pgTable("friendships", {
+  id: serial("id").primaryKey(),
+  userA: text("user_a").notNull(),
+  userB: text("user_b").notNull(),
+  status: text("status").notNull(),
+  requestedBy: text("requested_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  acceptedAt: timestamp("accepted_at"),
+});
+
+export const dmMessagesTable = pgTable("dm_messages", {
+  id: serial("id").primaryKey(),
+  userA: text("user_a").notNull(),
+  userB: text("user_b").notNull(),
+  fromUser: text("from_user").notNull(),
+  body: text("body").notNull(),
+  readByOther: integer("read_by_other").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

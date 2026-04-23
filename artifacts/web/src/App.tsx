@@ -10,6 +10,7 @@ import Leaderboard from "./pages/Leaderboard";
 import History from "./pages/History";
 import UserProfile from "./pages/UserProfile";
 import Watchlist from "./pages/Watchlist";
+import Friends from "./pages/Friends";
 import NameModal from "./components/NameModal";
 import { UserProvider, useUser } from "./context/UserContext";
 
@@ -29,6 +30,7 @@ function AppInner() {
         <Route path="/leaderboard"><Leaderboard /></Route>
         <Route path="/history"><History /></Route>
         <Route path="/watchlist"><Watchlist /></Route>
+        <Route path="/friends"><Friends /></Route>
         <Route path="/u/:name"><UserProfile /></Route>
         <Route><Home /></Route>
       </Switch>
