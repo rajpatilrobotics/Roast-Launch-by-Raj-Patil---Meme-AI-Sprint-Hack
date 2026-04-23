@@ -205,6 +205,114 @@ router.get("/live-battle/leaderboard", async (_req, res) => {
   }
 });
 
+router.get("/live-battle/user/:name", async (req, res) => {
+  const name = String(req.params.name || "").trim();
+  if (!name) return res.status(400).json({ error: "name required" });
+  try {
+    const rows = await db
+      .select()
+      .from(liveBattleRoomsTable)
+      .where(and(
+        eq(liveBattleRoomsTable.status, "done"),
+        or(eq(liveBattleRoomsTable.hostUser, name), eq(liveBattleRoomsTable.opponentUser, name)),
+      ))
+      .orderBy(desc(liveBattleRoomsTable.createdAt))
+      .limit(200);
+
+    let wins = 0;
+    let losses = 0;
+    let bestScore = 0;
+    const head2head = new Map<string, { opponent: string; wins: number; losses: number; lastBattleAt: string | null }>();
+    const recent: Array<{
+      id: number;
+      opponent: string;
+      youWon: boolean;
+      yourScore: number;
+      theirScore: number;
+      yourVerdict: string;
+      reason: string;
+      createdAt: string;
+    }> = [];
+
+    // chronological for streaks (oldest first)
+    const chrono = [...rows].reverse();
+    let currentStreak = 0;
+    let currentStreakKind: "W" | "L" | null = null;
+    let bestWinStreak = 0;
+    let runningWinStreak = 0;
+
+    for (const r of chrono) {
+      const result: any = r.result || {};
+      const youAreWinner = result.winnerUser === name;
+      const opponent = youAreWinner ? result.loserUser : result.winnerUser;
+      const yourRoast = youAreWinner ? result.winnerRoast : result.loserRoast;
+      const theirRoast = youAreWinner ? result.loserRoast : result.winnerRoast;
+      if (!opponent) continue;
+
+      if (youAreWinner) {
+        wins += 1;
+        runningWinStreak += 1;
+        if (runningWinStreak > bestWinStreak) bestWinStreak = runningWinStreak;
+        if (currentStreakKind === "W") currentStreak += 1;
+        else { currentStreak = 1; currentStreakKind = "W"; }
+      } else {
+        losses += 1;
+        runningWinStreak = 0;
+        if (currentStreakKind === "L") currentStreak += 1;
+        else { currentStreak = 1; currentStreakKind = "L"; }
+      }
+
+      const yScore = Number(yourRoast?.score || 0);
+      if (yScore > bestScore) bestScore = yScore;
+
+      const ts = r.createdAt ? new Date(r.createdAt as any).toISOString() : null;
+      const h = head2head.get(opponent) || { opponent, wins: 0, losses: 0, lastBattleAt: null };
+      if (youAreWinner) h.wins += 1; else h.losses += 1;
+      if (!h.lastBattleAt || (ts && ts > h.lastBattleAt)) h.lastBattleAt = ts;
+      head2head.set(opponent, h);
+    }
+
+    // recent (newest first)
+    for (const r of rows.slice(0, 10)) {
+      const result: any = r.result || {};
+      const youAreWinner = result.winnerUser === name;
+      const opponent = youAreWinner ? result.loserUser : result.winnerUser;
+      const yourRoast = youAreWinner ? result.winnerRoast : result.loserRoast;
+      const theirRoast = youAreWinner ? result.loserRoast : result.winnerRoast;
+      if (!opponent || !yourRoast || !theirRoast) continue;
+      recent.push({
+        id: r.id,
+        opponent,
+        youWon: youAreWinner,
+        yourScore: Number(yourRoast.score || 0),
+        theirScore: Number(theirRoast.score || 0),
+        yourVerdict: String(yourRoast.verdict || ""),
+        reason: String(result.reason || ""),
+        createdAt: r.createdAt ? new Date(r.createdAt as any).toISOString() : "",
+      });
+    }
+
+    const battles = wins + losses;
+    res.json({
+      userName: name,
+      overall: {
+        battles,
+        wins,
+        losses,
+        winRate: battles ? Math.round((wins / battles) * 100) : 0,
+        currentStreak,
+        currentStreakKind,
+        bestWinStreak,
+        bestScore,
+      },
+      head2head: [...head2head.values()].sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses) || b.wins - a.wins),
+      recent,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || "live stats fetch failed" });
+  }
+});
+
 router.post("/live-battle/submit", async (req, res) => {
   const roomId = Number(req.body?.roomId);
   const userName = String(req.body?.userName || "").trim();

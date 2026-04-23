@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { API, scoreColor, verdictColor } from "../lib/api";
 import { useUser } from "../context/UserContext";
+import UserLiveStats from "../components/UserLiveStats";
 
 type Stats = { total: number; avgScore: number; roastCount: number; battleCount: number; totalVotesReceived: number };
 type ActivityItem = { id: number; userName: string; type: string; coinName: string; score: number | null; verdict: string | null; createdAt: string };
@@ -145,6 +146,9 @@ export default function UserProfile() {
           </div>
         )}
       </div>
+
+      {/* Live battle stats */}
+      <UserLiveStats name={name} isOwn={isOwn} />
 
       {/* Top coin */}
       {topCoin && (
