@@ -14,6 +14,7 @@ import profileRouter from "./profile";
 import battleRequestsRouter from "./battleRequests";
 import recapRouter from "./recap";
 import communityFeaturesRouter from "./communityFeatures";
+import liveBattleRouter from "./liveBattle";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(profileRouter);
 router.use(battleRequestsRouter);
 router.use(recapRouter);
 router.use(communityFeaturesRouter);
+router.use(liveBattleRouter);
 
 export default router;

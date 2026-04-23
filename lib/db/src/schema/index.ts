@@ -91,6 +91,23 @@ export const dailyChallengeCompletionsTable = pgTable("daily_challenge_completio
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const presenceTable = pgTable("presence", {
+  userName: text("user_name").primaryKey(),
+  lastSeen: timestamp("last_seen").defaultNow().notNull(),
+});
+
+export const liveBattleRoomsTable = pgTable("live_battle_rooms", {
+  id: serial("id").primaryKey(),
+  hostUser: text("host_user").notNull(),
+  opponentUser: text("opponent_user").notNull(),
+  status: text("status").notNull(),
+  hostCoin: jsonb("host_coin"),
+  opponentCoin: jsonb("opponent_coin"),
+  result: jsonb("result"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  startedAt: timestamp("started_at"),
+});
+
 export const battleRequestsTable = pgTable("battle_requests", {
   id: serial("id").primaryKey(),
   fromUser: text("from_user").notNull(),
