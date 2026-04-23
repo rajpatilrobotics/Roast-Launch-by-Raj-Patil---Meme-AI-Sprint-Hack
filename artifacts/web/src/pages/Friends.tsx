@@ -28,9 +28,11 @@ export default function Friends() {
 
   // search
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<string[]>([]);
+  type FindUser = { name: string; online: boolean; roastCount: number; createdAt: string; isNew: boolean };
+  const [results, setResults] = useState<FindUser[]>([]);
   const [busyName, setBusyName] = useState<string | null>(null);
   const [statusMap, setStatusMap] = useState<Record<string, string>>({});
+  const [filter, setFilter] = useState<"all" | "online" | "new" | "active">("all");
 
   async function load() {
     if (!userName) return;
@@ -54,20 +56,22 @@ export default function Friends() {
   useEffect(() => {
     if (!userName || tab !== "find") return;
     const t = setTimeout(async () => {
-      const r = await fetch(`${API}/friends/search?q=${encodeURIComponent(q)}&exclude=${encodeURIComponent(userName)}&limit=100`).then((x) => x.json());
-      const users: string[] = r.users || [];
+      const r = await fetch(
+        `${API}/friends/search?q=${encodeURIComponent(q)}&exclude=${encodeURIComponent(userName)}&filter=${filter}&limit=100`,
+      ).then((x) => x.json());
+      const users: FindUser[] = r.users || [];
       setResults(users);
       const map: Record<string, string> = {};
       await Promise.all(
-        users.map(async (n: string) => {
-          const s = await fetch(`${API}/friends/status?userName=${encodeURIComponent(userName)}&otherUser=${encodeURIComponent(n)}`).then((x) => x.json());
-          map[n] = s.status;
+        users.map(async (u) => {
+          const s = await fetch(`${API}/friends/status?userName=${encodeURIComponent(userName)}&otherUser=${encodeURIComponent(u.name)}`).then((x) => x.json());
+          map[u.name] = s.status;
         }),
       );
       setStatusMap(map);
     }, q.trim() ? 250 : 0);
     return () => clearTimeout(t);
-  }, [q, userName, tab]);
+  }, [q, userName, tab, filter]);
 
   async function sendReq(other: string) {
     if (!userName) return;
@@ -294,44 +298,90 @@ export default function Friends() {
             className="w-full bg-black border border-zinc-700 rounded-xl px-4 py-3 font-mono text-sm focus:outline-none focus:border-pink-500"
             autoFocus
           />
+
+          <div className="flex items-center gap-1.5 mt-3 overflow-x-auto pb-1">
+            {([
+              { id: "all", label: "All", icon: "👥" },
+              { id: "online", label: "Online now", icon: "🟢" },
+              { id: "active", label: "Top roasters", icon: "🔥" },
+              { id: "new", label: "New this week", icon: "✨" },
+            ] as const).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className={`shrink-0 px-3 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider border transition-colors ${
+                  filter === f.id
+                    ? "bg-pink-500/20 border-pink-500/50 text-pink-200"
+                    : "border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700"
+                }`}
+              >
+                {f.icon} {f.label}
+              </button>
+            ))}
+          </div>
+
           <div className="text-[11px] font-mono text-zinc-500 mt-3 mb-2 flex items-center justify-between">
-            <span>{q.trim() ? `Results for "${q}"` : "👥 All users on RoastLaunch"}</span>
+            <span>{q.trim() ? `Results for "${q}"` : `Showing ${filter === "all" ? "everyone" : filter === "online" ? "online users" : filter === "active" ? "top roasters" : "new this week"}`}</span>
             <span className="text-zinc-600">{results.length}</span>
           </div>
+
           <div className="space-y-2">
             {results.length === 0 && (
               <p className="text-zinc-600 text-xs font-mono text-center py-6">
-                {q.trim() ? `No users matching "${q}"` : "No users yet."}
+                {q.trim() ? `No users matching "${q}"` : "Nobody here yet."}
               </p>
             )}
             {results.map((u) => {
-              const status = statusMap[u] || "none";
+              const status = statusMap[u.name] || "none";
               return (
-                <div key={u} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-zinc-200 text-sm">
-                    {u.slice(0, 1).toUpperCase()}
-                  </span>
-                  <Link href={`/u/${u}`} className="font-mono text-sm text-zinc-100 flex-1 hover:text-pink-300">@{u}</Link>
+                <div key={u.name} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 flex items-center gap-3 hover:border-zinc-700 transition-colors">
+                  <div className="relative shrink-0">
+                    <span className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-zinc-700 flex items-center justify-center font-bold text-zinc-200 text-sm">
+                      {u.name.slice(0, 1).toUpperCase()}
+                    </span>
+                    {u.online && (
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-zinc-950 animate-pulse" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/u/${u.name}`} className="font-mono text-sm text-zinc-100 hover:text-pink-300 font-bold">
+                      @{u.name}
+                    </Link>
+                    <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-500 mt-0.5 flex-wrap">
+                      {u.online ? (
+                        <span className="text-green-400">● online</span>
+                      ) : (
+                        <span className="text-zinc-600">● offline</span>
+                      )}
+                      <span className="text-zinc-700">·</span>
+                      <span>🔥 {u.roastCount}</span>
+                      {u.isNew && (
+                        <span className="px-1.5 py-px rounded-full bg-yellow-500/15 border border-yellow-500/40 text-yellow-300 text-[9px] font-bold">
+                          NEW
+                        </span>
+                      )}
+                    </div>
+                  </div>
                   {status === "friends" && (
-                    <span className="text-[11px] font-mono text-green-400">✓ friends</span>
+                    <span className="text-[11px] font-mono text-green-400 shrink-0">✓ friends</span>
                   )}
                   {status === "outgoing" && (
-                    <span className="text-[11px] font-mono text-zinc-500">request sent</span>
+                    <span className="text-[11px] font-mono text-zinc-500 shrink-0">request sent</span>
                   )}
                   {status === "incoming" && (
                     <button
-                      onClick={() => accept(u)}
-                      disabled={busyName === u}
-                      className="px-3 py-1.5 rounded-lg bg-green-500 text-black font-mono text-xs font-bold hover:bg-green-400"
+                      onClick={() => accept(u.name)}
+                      disabled={busyName === u.name}
+                      className="shrink-0 px-3 py-1.5 rounded-lg bg-green-500 text-black font-mono text-xs font-bold hover:bg-green-400"
                     >
                       Accept
                     </button>
                   )}
                   {status === "none" && (
                     <button
-                      onClick={() => sendReq(u)}
-                      disabled={busyName === u}
-                      className="px-3 py-1.5 rounded-lg bg-pink-500/20 border border-pink-500/50 text-pink-200 font-mono text-xs hover:bg-pink-500/30 disabled:opacity-50"
+                      onClick={() => sendReq(u.name)}
+                      disabled={busyName === u.name}
+                      className="shrink-0 px-3 py-1.5 rounded-lg bg-pink-500/20 border border-pink-500/50 text-pink-200 font-mono text-xs hover:bg-pink-500/30 disabled:opacity-50"
                     >
                       + Add Friend
                     </button>

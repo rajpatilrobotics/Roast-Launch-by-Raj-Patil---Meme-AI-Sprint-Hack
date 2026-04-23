@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, friendshipsTable, presenceTable, usersTable, dmMessagesTable } from "@workspace/db";
-import { and, eq, or, desc, ilike, ne, gte, sql } from "drizzle-orm";
+import { db, friendshipsTable, presenceTable, usersTable, dmMessagesTable, activityHistoryTable } from "@workspace/db";
+import { and, eq, or, desc, ilike, ne, gte, sql, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -188,7 +188,8 @@ router.get("/friends/requests/:name", async (req, res) => {
 router.get("/friends/search", async (req, res) => {
   const q = clean(req.query.q);
   const exclude = clean(req.query.exclude);
-  const limit = Math.min(Number(req.query.limit) || 100, 200);
+  const filter = clean(req.query.filter) || "all"; // all | online | new | active
+  const limit = Math.min(Number(req.query.limit) || 100, 300);
 
   const conditions = [
     q ? ilike(usersTable.name, `%${q}%`) : undefined,
@@ -199,10 +200,46 @@ router.get("/friends/search", async (req, res) => {
     .select({ name: usersTable.name, createdAt: usersTable.createdAt })
     .from(usersTable)
     .where(conditions.length ? and(...conditions) : (undefined as any))
-    .orderBy(desc(usersTable.createdAt))
-    .limit(limit);
+    .limit(300);
 
-  res.json({ users: rows.map((r) => r.name) });
+  const names = rows.map((r) => r.name);
+  if (names.length === 0) return res.json({ users: [] });
+
+  // Online presence (last 60s)
+  const cutoff = new Date(Date.now() - 60_000);
+  const presenceRows = await db
+    .select({ userName: presenceTable.userName })
+    .from(presenceTable)
+    .where(and(gte(presenceTable.lastSeen, cutoff), inArray(presenceTable.userName, names)));
+  const onlineSet = new Set(presenceRows.map((p) => p.userName));
+
+  // Activity counts (roasts + battles per user)
+  const activityRows = await db
+    .select({ userName: activityHistoryTable.userName, c: sql<number>`count(*)::int` })
+    .from(activityHistoryTable)
+    .where(inArray(activityHistoryTable.userName, names))
+    .groupBy(activityHistoryTable.userName);
+  const activityMap = new Map(activityRows.map((r) => [r.userName, r.c]));
+
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+  let enriched = rows.map((r) => ({
+    name: r.name,
+    online: onlineSet.has(r.name),
+    roastCount: activityMap.get(r.name) || 0,
+    createdAt: r.createdAt as any as string,
+    isNew: r.createdAt ? new Date(r.createdAt as any).getTime() > weekAgo : false,
+  }));
+
+  if (filter === "online") enriched = enriched.filter((u) => u.online);
+  else if (filter === "new") enriched = enriched.filter((u) => u.isNew);
+  else if (filter === "active") enriched = enriched.filter((u) => u.roastCount > 0);
+
+  if (filter === "active") enriched.sort((a, b) => b.roastCount - a.roastCount);
+  else if (filter === "online") enriched.sort((a, b) => b.roastCount - a.roastCount);
+  else enriched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  res.json({ users: enriched.slice(0, limit) });
 });
 
 // summary counts (unread DMs + incoming friend requests) for header badge
