@@ -126,11 +126,7 @@ export default function LaunchPanel({
     }
   }
 
-  function onLaunchClick() {
-    if (!allReady) return;
-    trackLaunch();
-    window.open(buildFourMemeUrl(roast), "_blank", "noopener,noreferrer");
-  }
+  const launchUrl = buildFourMemeUrl(roast);
 
   return (
     <div
@@ -181,31 +177,23 @@ export default function LaunchPanel({
 
       {allReady ? (
         <>
-          <button
-            onClick={onLaunchClick}
+          <a
+            href={launchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={trackLaunch}
             className="block w-full text-center py-4 rounded-xl bg-gradient-to-r from-yellow-400 via-orange-500 to-green-500 text-black font-black text-lg hover:scale-[1.01] transition launch-pulse"
             data-testid="launch-on-fourmeme"
           >
             🚀 Launch ${(roast.ticker || "COIN").toUpperCase()} on Four.meme →
+          </a>
+          <button
+            onClick={copyPayload}
+            className="mt-2 w-full py-2 rounded-lg border border-zinc-700 text-zinc-300 font-mono text-xs hover-elevate"
+            data-testid="copy-launch-payload"
+          >
+            {copied ? "✓ Copied!" : "📋 Copy launch payload"}
           </button>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <button
-              onClick={copyPayload}
-              className="py-2 rounded-lg border border-zinc-700 text-zinc-300 font-mono text-xs hover-elevate"
-              data-testid="copy-launch-payload"
-            >
-              {copied ? "✓ Copied!" : "📋 Copy launch payload"}
-            </button>
-            <a
-              href={buildFourMemeUrl(roast)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={trackLaunch}
-              className="py-2 rounded-lg border border-zinc-700 text-zinc-300 font-mono text-xs hover-elevate text-center"
-            >
-              🔗 Open prefilled form
-            </a>
-          </div>
           {launched && (
             <div className="mt-3 text-center text-[11px] font-mono text-green-300">
               🚀 Logged to your profile · Launched ${(roast.ticker || "COIN").toUpperCase()} on Four.meme
@@ -214,13 +202,16 @@ export default function LaunchPanel({
         </>
       ) : (
         <>
-          <button
-            onClick={onLaunchClick}
+          <a
+            href={launchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={trackLaunch}
             className="block w-full text-center py-4 rounded-xl border-2 border-orange-500/60 bg-orange-500/10 text-orange-300 font-black text-base hover:bg-orange-500/20 transition"
             data-testid="launch-not-ready"
           >
             🚧 Launch anyway on Four.meme →
-          </button>
+          </a>
           <div className="mt-2 text-center text-[11px] font-mono text-zinc-500">
             Heads up — your coin failed {failed.length} pre-flight {failed.length === 1 ? "check" : "checks"}. Recommended fixes:
           </div>
@@ -232,24 +223,13 @@ export default function LaunchPanel({
               </li>
             ))}
           </ul>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              onClick={copyPayload}
-              className="py-2 rounded-lg border border-zinc-700 text-zinc-300 font-mono text-xs hover-elevate"
-              data-testid="copy-launch-payload"
-            >
-              {copied ? "✓ Copied!" : "📋 Copy launch payload"}
-            </button>
-            <a
-              href={buildFourMemeUrl(roast)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={trackLaunch}
-              className="py-2 rounded-lg border border-zinc-700 text-zinc-300 font-mono text-xs hover-elevate text-center"
-            >
-              🔗 Open prefilled form
-            </a>
-          </div>
+          <button
+            onClick={copyPayload}
+            className="mt-3 w-full py-2 rounded-lg border border-zinc-700 text-zinc-300 font-mono text-xs hover-elevate"
+            data-testid="copy-launch-payload"
+          >
+            {copied ? "✓ Copied!" : "📋 Copy launch payload"}
+          </button>
           {launched && (
             <div className="mt-3 text-center text-[11px] font-mono text-green-300">
               🚀 Logged to your profile · Launched ${(roast.ticker || "COIN").toUpperCase()} on Four.meme
