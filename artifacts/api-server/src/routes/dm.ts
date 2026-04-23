@@ -9,6 +9,14 @@ function pair(a: string, b: string): [string, string] {
 }
 const clean = (v: unknown) => String(v || "").trim();
 
+// in-memory typing heartbeats: key = `${userA}:${userB}:${typer}` → expiresAtMs
+const typingMap = new Map<string, number>();
+const TYPING_TTL_MS = 4500;
+function pruneTyping() {
+  const now = Date.now();
+  for (const [k, exp] of typingMap) if (exp < now) typingMap.delete(k);
+}
+
 async function areFriends(a: string, b: string) {
   const [x, y] = pair(a, b);
   const r = await db
@@ -128,6 +136,27 @@ router.get("/dm/conversations/:name", async (req, res) => {
   });
 
   res.json({ conversations: convos });
+});
+
+router.post("/dm/typing", async (req, res) => {
+  const fromUser = clean(req.body?.fromUser);
+  const toUser = clean(req.body?.toUser);
+  if (!fromUser || !toUser || fromUser === toUser) return res.json({ ok: true });
+  const friends = await areFriends(fromUser, toUser);
+  if (!friends) return res.status(403).json({ error: "not friends" });
+  const [a, b] = pair(fromUser, toUser);
+  typingMap.set(`${a}:${b}:${fromUser}`, Date.now() + TYPING_TTL_MS);
+  res.json({ ok: true });
+});
+
+router.get("/dm/typing", (req, res) => {
+  pruneTyping();
+  const userName = clean(req.query.userName);
+  const otherUser = clean(req.query.otherUser);
+  if (!userName || !otherUser) return res.json({ typing: false });
+  const [a, b] = pair(userName, otherUser);
+  const exp = typingMap.get(`${a}:${b}:${otherUser}`) || 0;
+  res.json({ typing: exp > Date.now() });
 });
 
 export default router;

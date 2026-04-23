@@ -21,7 +21,9 @@ export default function DMPanel({
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [otherTyping, setOtherTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const lastTypingSentRef = useRef(0);
 
   async function load() {
     try {
@@ -38,18 +40,40 @@ export default function DMPanel({
     } catch {}
   }
 
+  async function pollTyping() {
+    try {
+      const r = await fetch(
+        `${API}/dm/typing?userName=${encodeURIComponent(userName)}&otherUser=${encodeURIComponent(otherUser)}`,
+      );
+      const d = await r.json();
+      setOtherTyping(!!d.typing);
+    } catch {}
+  }
+
   useEffect(() => {
     load();
-    const id = setInterval(load, 4000);
+    pollTyping();
+    const id = setInterval(() => { load(); pollTyping(); }, 3000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userName, otherUser]);
+
+  function notifyTyping() {
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 2000) return;
+    lastTypingSentRef.current = now;
+    fetch(`${API}/dm/typing`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromUser: userName, toUser: otherUser }),
+    }).catch(() => {});
+  }
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages.length]);
+  }, [messages.length, otherTyping]);
 
   async function send() {
     const text = body.trim();
@@ -128,13 +152,23 @@ export default function DMPanel({
               </div>
             );
           })}
+          {otherTyping && (
+            <div className="flex justify-start">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl rounded-bl-sm px-3.5 py-2.5 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-300/80 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-2 h-2 rounded-full bg-blue-300/80 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-2 h-2 rounded-full bg-blue-300/80 animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="text-[10px] font-mono text-zinc-500 ml-1">@{otherUser} is typing</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-zinc-800 p-3 bg-black/60">
           <div className="flex items-center gap-2">
             <input
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={(e) => { setBody(e.target.value); if (e.target.value.trim()) notifyTyping(); }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
