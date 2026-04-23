@@ -147,7 +147,6 @@ export default function Friends() {
     <main className="max-w-3xl mx-auto px-4 py-6">
       <div className="rounded-2xl border border-pink-500/20 bg-gradient-to-br from-pink-500/5 to-purple-500/5 p-5 mb-5">
         <h1 className="text-2xl md:text-3xl font-black tracking-tight">
-          <span className="text-pink-400">👯</span>{" "}
           <span className="text-zinc-100">Friends</span>
         </h1>
         <p className="text-zinc-500 text-xs font-mono mt-1">
