@@ -115,6 +115,67 @@ function CountUp({ to, duration = 1500 }: { to: number; duration?: number }) {
   return <>{n}</>;
 }
 
+const JUMP_SECTIONS: { id: string; label: string; emoji: string }[] = [
+  { id: "judges", label: "Judges", emoji: "🎤" },
+  { id: "numbers", label: "Numbers", emoji: "📊" },
+  { id: "fix", label: "Fix", emoji: "🛠️" },
+  { id: "launch", label: "Launch", emoji: "🚀" },
+  { id: "share", label: "Share", emoji: "🎨" },
+  { id: "chain", label: "On-chain", emoji: "⛓" },
+];
+
+function JumpNav() {
+  const [active, setActive] = useState<string>("judges");
+  useEffect(() => {
+    const els = JUMP_SECTIONS
+      .map((s) => document.getElementById(s.id))
+      .filter((el): el is HTMLElement => !!el);
+    if (els.length === 0) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target?.id) setActive(visible.target.id);
+      },
+      { rootMargin: "-30% 0px -55% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
+  const jump = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  return (
+    <nav
+      aria-label="Jump to section"
+      className="hidden lg:flex fixed right-5 top-1/2 -translate-y-1/2 z-30 flex-col gap-1.5 rounded-2xl border border-zinc-800 bg-black/70 backdrop-blur p-2 shadow-xl"
+    >
+      {JUMP_SECTIONS.map((s) => {
+        const isActive = active === s.id;
+        return (
+          <button
+            key={s.id}
+            onClick={() => jump(s.id)}
+            title={s.label}
+            className={`group flex items-center gap-2 px-2.5 py-1.5 rounded-lg font-mono text-[11px] transition-all ${
+              isActive
+                ? "bg-orange-500/20 text-orange-300 border border-orange-500/50"
+                : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 border border-transparent"
+            }`}
+          >
+            <span className="text-sm leading-none">{s.emoji}</span>
+            <span className="uppercase tracking-wider">{s.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
 function SectionHeader({ step, title, subtitle, muted = false }: { step?: string; title: string; subtitle?: string; muted?: boolean }) {
   return (
     <div className="mb-3 flex items-baseline gap-3">
@@ -408,7 +469,7 @@ export default function Home() {
 
         {/* Step 2 · Judges */}
         {(loading || roast) && (
-          <section className="mt-10">
+          <section id="judges" className="mt-10 scroll-mt-24">
             <SectionHeader step="2" title="Meet the AI judges" subtitle="Three personas roast your pitch — bullish, skeptical, and on-chain." />
             <div className="grid md:grid-cols-3 gap-4">
               <Persona title="The Bull" subtitle="Degen optimist" emoji="🐂" color="border-green-500/60" glow="glow-green" meterColor="bg-green-500" text={roast?.bull || ""} loading={loading} />
@@ -449,11 +510,12 @@ export default function Home() {
         )}
 
         {/* === RESULT — clean stepped flow === */}
+        {roast && <JumpNav />}
         {roast && (
           <div className="space-y-10 mt-10">
 
             {/* Step 3 · Numbers */}
-            <section>
+            <section id="numbers" className="scroll-mt-24">
               <SectionHeader step="3" title="The numbers" subtitle="How your idea scored across four dimensions." />
               <div className="rounded-2xl border border-zinc-800 bg-black/60 p-6 space-y-6">
                 <div className="grid sm:grid-cols-2 gap-x-6 gap-y-4">
@@ -505,7 +567,7 @@ export default function Home() {
             </section>
 
             {/* Step 4 · Recovery plan */}
-            <section>
+            <section id="fix" className="scroll-mt-24">
               <SectionHeader step="4" title="Fix it before you launch" subtitle="Specific, concrete tweaks the AI thinks will move your score." />
               <div className="rounded-2xl border border-zinc-800 bg-black/60 p-6">
                 <ul className="space-y-2 text-sm text-zinc-200">
@@ -523,7 +585,7 @@ export default function Home() {
             </section>
 
             {/* Step 5 · Launch */}
-            <section>
+            <section id="launch" className="scroll-mt-24">
               <SectionHeader step="5" title="Launch on Four.meme" subtitle="Pre-flight checklist + one-tap launch with autofilled details." />
               <LaunchPanel
                 roast={roast}
@@ -532,7 +594,7 @@ export default function Home() {
             </section>
 
             {/* Step 6 · Share */}
-            <section>
+            <section id="share" className="scroll-mt-24">
               <SectionHeader step="6" title="Make it shareable" subtitle="Memes, a downloadable card, and one-click share to X." />
               <div className="grid md:grid-cols-2 gap-6 items-start">
                 <div className="space-y-3">
@@ -578,7 +640,7 @@ export default function Home() {
             </section>
 
             {/* Step 7 · On-chain proof (subtle) */}
-            <section>
+            <section id="chain" className="scroll-mt-24">
               <SectionHeader step="7" title="Prove it on-chain" subtitle="Optional — anchor this roast permanently to BNB Chain." muted />
               <div className="rounded-2xl border border-zinc-800 bg-black/40 p-5">
                 {tx ? (
