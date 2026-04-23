@@ -6,6 +6,30 @@ const router: IRouter = Router();
 
 let forecastCache: { ts: number; data: any } | null = null;
 
+router.post("/meta/roast-trend", async (req, res) => {
+  const narrative = String(req.body?.narrative || "").slice(0, 60);
+  if (!narrative) return res.status(400).json({ error: "narrative required" });
+  try {
+    const prompt = `You are a meme coin idea generator for Four.meme. Given the narrative: "${narrative}", generate exactly 3 absurd, roastable meme coin ideas. Each idea must be funny, on-narrative, and short. Return JSON only:\n{"ideas":[{"label":"emoji + 3-5 word punchy label","idea":"one sentence concept (max 18 words)","name":"coin name (1-2 words)","ticker":"TICKER (2-6 caps)"}]}`;
+    const raw = await textGen(prompt, { json: true });
+    const txt = raw.replace(/^```json/i, "").replace(/^```/, "").replace(/```$/, "").trim();
+    const m = txt.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(m ? m[0] : txt);
+    const ideas = Array.isArray(parsed?.ideas) ? parsed.ideas.slice(0, 3) : [];
+    if (!ideas.length) throw new Error("no ideas");
+    res.json({ narrative, ideas });
+  } catch {
+    res.json({
+      narrative,
+      ideas: [
+        { label: `🔥 Roast a ${narrative} pump`, idea: `A ${narrative} coin that pumps only on Mondays`, name: "MonPump", ticker: "MPUMP" },
+        { label: `🪦 Roast a ${narrative} rug`, idea: `A ${narrative} coin whose dev rugs and apologizes via NFT`, name: "ApologyDAO", ticker: "SORRY" },
+        { label: `🚀 Roast a ${narrative} moonshot`, idea: `A ${narrative} coin that promises 1000x then delivers 0.1x`, name: "DreamCoin", ticker: "DREAM" },
+      ],
+    });
+  }
+});
+
 router.get("/meta", async (_req, res) => {
   const { tokens, raw } = await fetchTrending().catch(() => ({ tokens: [] as string[], raw: [] }));
   const meta = await classifyMeta(tokens).catch(() => "Degen humor");
