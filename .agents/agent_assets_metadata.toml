@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "JVQ_Rn5Cr_yP2aKjlYCAA"
+uri = "file://DEMO_WALKTHROUGH.md"
+type = "text"
+title = "RoastLaunch — Demo Walkthrough"
