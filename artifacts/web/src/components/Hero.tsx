@@ -77,24 +77,24 @@ export default function Hero() {
         </div>
 
         {/* Feature highlights */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-3 gap-2 max-w-3xl mx-auto text-left">
+        <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-3 max-w-4xl mx-auto text-left">
           {[
-            { icon: "🎤", title: "3 AI Judges", desc: "Bull, Skeptic & Rug Detector roast live." },
-            { icon: "📊", title: "Survive Score", desc: "0-100 with rug & graduation odds." },
-            { icon: "🛠️", title: "Coach Mode", desc: "AI rewrites your pitch, before/after." },
-            { icon: "⚔️", title: "Live Battles", desc: "60-second PvP roast battles." },
-            { icon: "📈", title: "Meta Radar", desc: "What's hot, dead, best hour to launch." },
-            { icon: "👥", title: "Community", desc: "Daily challenges, leaderboards, DMs." },
+            { icon: "🎤", title: "3 AI Judges", desc: "Bull, Skeptic & Rug Detector roast your idea live." },
+            { icon: "📊", title: "Survive Score", desc: "0-100 score with rug & graduation probability." },
+            { icon: "🛠️", title: "Coach Mode", desc: "AI rewrites your pitch and shows the before/after." },
+            { icon: "⚔️", title: "Live Battles", desc: "60-second PvP roast battles against friends." },
+            { icon: "📈", title: "Meta Radar", desc: "What's hot, what's dead, best hour to launch." },
+            { icon: "👥", title: "Community", desc: "Daily challenges, leaderboards, friends & DMs." },
           ].map((f) => (
             <div
               key={f.title}
-              className="rounded-lg border border-white/10 bg-white/5 backdrop-blur-md p-2.5 shadow-[0_4px_20px_-8px_rgba(249,115,22,0.15)] hover:border-orange-400/40 hover:bg-white/[0.07] transition"
+              className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-md p-3 shadow-[0_4px_20px_-8px_rgba(249,115,22,0.15)] hover:border-orange-400/40 hover:bg-white/[0.07] transition"
             >
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="text-sm">{f.icon}</span>
-                <span className="font-bold text-xs text-zinc-100">{f.title}</span>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{f.icon}</span>
+                <span className="font-bold text-sm text-zinc-100">{f.title}</span>
               </div>
-              <p className="text-[10px] font-mono text-zinc-400 leading-snug">{f.desc}</p>
+              <p className="text-[11px] font-mono text-zinc-400 leading-snug">{f.desc}</p>
             </div>
           ))}
         </div>
