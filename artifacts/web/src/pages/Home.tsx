@@ -176,6 +176,44 @@ function JumpNav() {
   );
 }
 
+function CompareTile({ label, before, after, delta, suffix = "", lowerIsBetter = false }: { label: string; before: number; after: number; delta: number; suffix?: string; lowerIsBetter?: boolean }) {
+  const improved = lowerIsBetter ? delta < 0 : delta > 0;
+  const same = delta === 0;
+  const deltaColor = same ? "text-zinc-500" : improved ? "text-green-400" : "text-red-400";
+  const sign = delta > 0 ? "+" : "";
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-black/50 p-4">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 mb-2">{label}</div>
+      <div className="flex items-end gap-2">
+        <div className="text-zinc-500 line-through font-mono text-lg">{before}{suffix}</div>
+        <div className="text-zinc-600 text-lg">→</div>
+        <div className="text-zinc-100 font-black font-mono text-2xl">{after}{suffix}</div>
+      </div>
+      <div className={`mt-1 font-mono text-xs font-bold ${deltaColor}`}>
+        {same ? "no change" : `${sign}${delta}${suffix} ${improved ? "✓" : ""}`}
+      </div>
+    </div>
+  );
+}
+
+function CompareRow({ label, before, after, delta, max }: { label: string; before: number; after: number; delta: number; max: number }) {
+  const improved = delta > 0;
+  const same = delta === 0;
+  const deltaColor = same ? "text-zinc-500" : improved ? "text-green-400" : "text-red-400";
+  const sign = delta > 0 ? "+" : "";
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-zinc-400 uppercase">{label}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-zinc-500 line-through tabular-nums">{before}/{max}</span>
+        <span className="text-zinc-600">→</span>
+        <span className="text-zinc-100 font-bold tabular-nums">{after}/{max}</span>
+        <span className={`tabular-nums w-12 text-right ${deltaColor}`}>{same ? "·" : `${sign}${delta}`}</span>
+      </div>
+    </div>
+  );
+}
+
 function SectionHeader({ step, title, subtitle, muted = false }: { step?: string; title: string; subtitle?: string; muted?: boolean }) {
   return (
     <div className="mb-3 flex items-baseline gap-3">
@@ -221,6 +259,9 @@ export default function Home() {
   const [trending, setTrending] = useState<{ tokens: string[]; meta: string }>({ tokens: [], meta: "..." });
   const [chainSaving, setChainSaving] = useState(false);
   const [tx, setTx] = useState<FakeTx | null>(null);
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [coachResult, setCoachResult] = useState<{ original: Roast; improved: Roast; delta: { score: number; rugProbability: number; graduationProbability: number; narrative: number; community: number; timing: number; risk: number } } | null>(null);
+  const [coachError, setCoachError] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const { userName } = useUser();
@@ -283,6 +324,8 @@ export default function Home() {
     setRoast(null);
     setShowConfetti(null);
     setCountdown(true);
+    setCoachResult(null);
+    setCoachError(null);
     const p = (async () => {
       const r = await fetch(`${API}/roast`, {
         method: "POST",
@@ -298,6 +341,40 @@ export default function Home() {
       }
     })();
     setPending(p);
+  }
+
+  async function runCoach() {
+    if (!roast || coachLoading) return;
+    setCoachLoading(true);
+    setCoachError(null);
+    setCoachResult(null);
+    try {
+      const r = await fetch(`${API}/roast/coach`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ originalRoast: roast, userName: userName || undefined }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.error || "Coach failed");
+      setCoachResult(data);
+      setHistory((h) => [data.improved, ...h.filter((x) => x.id !== data.improved.id)].slice(0, 10));
+      setTimeout(() => {
+        document.getElementById("coach-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+    } catch (e: any) {
+      setCoachError(e?.message || "Something went wrong");
+    } finally {
+      setCoachLoading(false);
+    }
+  }
+
+  function applyCoachAsCurrent() {
+    if (!coachResult) return;
+    setRoast(coachResult.improved);
+    setCoachResult(null);
+    setShowConfetti(coachResult.improved.verdict === "WAGMI" ? "wagmi" : coachResult.improved.verdict === "NGMI" ? "ngmi" : "dyor");
+    setTimeout(() => setShowConfetti(null), 2400);
+    document.getElementById("numbers")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function onCountdownDone() {
@@ -578,8 +655,69 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
+                <div className="mt-5 pt-5 border-t border-zinc-900 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                  <div className="text-[11px] font-mono text-zinc-500 max-w-md">
+                    🤖 <span className="text-zinc-300">AI Coach:</span> Auto-apply these suggestions and re-score to see how much your idea improves.
+                  </div>
+                  <button
+                    onClick={runCoach}
+                    disabled={coachLoading}
+                    className="px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold text-sm hover-elevate disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-purple-500/20"
+                    data-testid="button-coach"
+                  >
+                    {coachLoading ? "🤖 Re-roasting..." : "✨ Apply fixes & re-roast"}
+                  </button>
+                </div>
+                {coachError && (
+                  <div className="mt-3 text-xs font-mono text-red-400">⚠️ {coachError}</div>
+                )}
               </div>
-              <div className="mt-4">
+
+              {coachResult && (
+                <div id="coach-result" className="mt-6 rounded-2xl border-2 border-purple-500/50 bg-gradient-to-br from-purple-950/40 via-black to-pink-950/30 p-6 scroll-mt-24" data-testid="coach-result">
+                  <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+                    <div>
+                      <div className="text-[11px] font-mono uppercase tracking-wider text-purple-300">🤖 AI Coach result</div>
+                      <h3 className="text-lg font-black text-zinc-100 mt-0.5">Before vs. after applying the fixes</h3>
+                    </div>
+                    <button
+                      onClick={applyCoachAsCurrent}
+                      className="px-4 py-2 rounded-lg bg-purple-500 text-white font-mono text-xs font-bold hover:bg-purple-400"
+                      data-testid="button-coach-apply"
+                    >
+                      ✅ Use the improved version →
+                    </button>
+                  </div>
+
+                  <div className="grid sm:grid-cols-3 gap-4 mb-5">
+                    <CompareTile label="Score" before={coachResult.original.score} after={coachResult.improved.score} delta={coachResult.delta.score} suffix="/100" />
+                    <CompareTile label="Rug %" before={coachResult.original.rugProbability} after={coachResult.improved.rugProbability} delta={coachResult.delta.rugProbability} suffix="%" lowerIsBetter />
+                    <CompareTile label="Graduation %" before={coachResult.original.graduationProbability} after={coachResult.improved.graduationProbability} delta={coachResult.delta.graduationProbability} suffix="%" />
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-x-6 gap-y-3 mb-5 text-xs font-mono">
+                    <CompareRow label="Narrative" before={coachResult.original.narrative} after={coachResult.improved.narrative} delta={coachResult.delta.narrative} max={25} />
+                    <CompareRow label="Community" before={coachResult.original.community} after={coachResult.improved.community} delta={coachResult.delta.community} max={25} />
+                    <CompareRow label="Timing" before={coachResult.original.timing} after={coachResult.improved.timing} delta={coachResult.delta.timing} max={25} />
+                    <CompareRow label="Risk" before={coachResult.original.risk} after={coachResult.improved.risk} delta={coachResult.delta.risk} max={25} />
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-3 text-xs">
+                    <div className="rounded-lg border border-zinc-800 bg-black/40 p-3">
+                      <div className="font-mono uppercase text-[10px] text-zinc-500 mb-1">Before — verdict</div>
+                      <div className={`font-bold ${verdictColor(coachResult.original.verdict).split(" ")[0]}`}>{coachResult.original.verdict}</div>
+                      <div className="text-zinc-400 mt-1 italic line-clamp-3">"{coachResult.original.summary}"</div>
+                    </div>
+                    <div className="rounded-lg border border-purple-500/40 bg-purple-500/5 p-3">
+                      <div className="font-mono uppercase text-[10px] text-purple-300 mb-1">After — verdict</div>
+                      <div className={`font-bold ${verdictColor(coachResult.improved.verdict).split(" ")[0]}`}>{coachResult.improved.verdict}</div>
+                      <div className="text-zinc-300 mt-1 italic line-clamp-3">"{coachResult.improved.summary}"</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-6">
                 <Playbook plan={roast.sevenDayPlan} />
               </div>
             </section>

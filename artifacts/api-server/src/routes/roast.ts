@@ -339,6 +339,41 @@ router.post("/roast/remix", async (req, res) => {
   }
 });
 
+router.post("/roast/coach", async (req, res) => {
+  const { originalRoast, userName } = req.body || {};
+  if (!originalRoast || !originalRoast.tokenIdea) {
+    return res.status(400).json({ error: "originalRoast required" });
+  }
+  try {
+    const fixes: string[] = Array.isArray(originalRoast.fixedBrief) ? originalRoast.fixedBrief : [];
+    const improvedIdea = fixes.length
+      ? `${originalRoast.tokenIdea} — REVISED: ${fixes.join(" | ")}`
+      : originalRoast.tokenIdea;
+    const improved = await runRoast({
+      tokenIdea: improvedIdea,
+      tokenName: originalRoast.tokenName,
+      ticker: originalRoast.ticker,
+      userName,
+    });
+    res.json({
+      original: originalRoast,
+      improved,
+      improvementsApplied: fixes,
+      delta: {
+        score: improved.score - (originalRoast.score || 0),
+        rugProbability: improved.rugProbability - (originalRoast.rugProbability || 0),
+        graduationProbability: improved.graduationProbability - (originalRoast.graduationProbability || 0),
+        narrative: improved.narrative - (originalRoast.narrative || 0),
+        community: improved.community - (originalRoast.community || 0),
+        timing: improved.timing - (originalRoast.timing || 0),
+        risk: improved.risk - (originalRoast.risk || 0),
+      },
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || "coach failed" });
+  }
+});
+
 router.post("/launch", async (req, res) => {
   const { id, userName, tokenName, ticker, tokenIdea, score, verdict } = req.body || {};
   if (!ticker || typeof ticker !== "string") {
