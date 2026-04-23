@@ -734,8 +734,8 @@ export default function Home() {
             {/* Step 6 · Share */}
             <section id="share" className="scroll-mt-24">
               <SectionHeader step="6" title="Make it shareable" subtitle="Memes, a downloadable card, and one-click share to X." />
-              <div className="grid md:grid-cols-2 gap-6 items-start">
-                <div className="space-y-3">
+              <div className="space-y-6">
+                <div className="max-w-md mx-auto w-full space-y-3">
                   <div ref={cardRef} className="rounded-2xl p-6 bg-gradient-to-br from-zinc-900 to-black border-2 border-green-500/40" style={{ minHeight: 460 }}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="font-black text-lg">
@@ -768,9 +768,7 @@ export default function Home() {
                     <button onClick={shareOnX} className="py-3 rounded-lg bg-white text-black font-mono text-sm hover:bg-zinc-200">𝕏 Share on X</button>
                   </div>
                 </div>
-                <div>
-                  <MemeCards tokenName={roast.tokenName || roast.ticker || "YOUR COIN"} memeTexts={roast.memeTexts} />
-                </div>
+                <MemeCards tokenName={roast.tokenName || roast.ticker || "YOUR COIN"} memeTexts={roast.memeTexts} />
               </div>
               <div className="mt-6">
                 <Voting roastId={roast.id} />
