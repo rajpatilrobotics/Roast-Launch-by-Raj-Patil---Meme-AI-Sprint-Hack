@@ -102,7 +102,7 @@ export default function Hero() {
         <div className="mt-7 flex items-center justify-center gap-x-3 gap-y-2 text-[11px] font-mono text-zinc-500 flex-wrap">
           <span className="inline-flex items-center gap-1.5"><span className="text-green-400">●</span> BNB Testnet Live</span>
           <span className="text-zinc-700">·</span>
-          <span>⚡ Powered by Groq</span>
+          <span>⚡ Powered by Groq + Gemini</span>
           <span className="text-zinc-700">·</span>
           <span>Built for Four.meme AI Sprint</span>
         </div>
