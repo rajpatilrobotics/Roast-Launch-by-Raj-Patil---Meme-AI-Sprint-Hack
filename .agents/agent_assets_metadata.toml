@@ -12,3 +12,9 @@ id = "sY9zagkvvT7fvaUy3E_ri"
 uri = "file://exports/RoastLaunch-Demo-Walkthrough.md"
 type = "text"
 title = "RoastLaunch Demo Walkthrough (script for judges)"
+
+[[outputs]]
+id = "NDJ9nDl_-4XZvO68gxU7j"
+uri = "file://exports/RoastLaunch-Demo-Script.md"
+type = "text"
+title = "RoastLaunch Demo Video Script (4-minute narration)"
