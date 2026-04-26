@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, battleRequestsTable, activityHistoryTable, chatMessagesTable } from "@workspace/db";
 import { eq, or, and } from "drizzle-orm";
 import { runRoast } from "./roast";
+import { comparativelyJudge } from "../lib/comparativeJudge";
 
 const router: IRouter = Router();
 
@@ -42,8 +43,12 @@ router.post("/battle-requests/:id/accept", async (req, res) => {
 
   const fromCoin = request.fromCoin as any;
   const [a, b] = await Promise.all([runRoast({ ...fromCoin }), runRoast({ ...toCoin })]);
-  const winner: "A" | "B" = a.score >= b.score ? "A" : "B";
-  const result = { a, b, winner, reason: `Score: ${a.score} vs ${b.score}` };
+  const verdict = await comparativelyJudge(a, b, {
+    labelA: `COIN A (@${request.fromUser})`,
+    labelB: `COIN B (@${userName})`,
+  });
+  const winner = verdict.winner;
+  const result = { a, b, winner, reason: verdict.reason };
 
   await db.update(battleRequestsTable).set({ status: "accepted", toCoin, result }).where(eq(battleRequestsTable.id, id));
 
